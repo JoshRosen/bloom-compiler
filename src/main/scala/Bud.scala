@@ -44,10 +44,3 @@ class Bud(tables: Iterable[Table[_]], stratifiedRules: Iterable[Iterable[Rule]])
   // Natural join
   //
 }
-
-class Scratch {}
-
-class Channel {}
-
-class Periodic {}
-

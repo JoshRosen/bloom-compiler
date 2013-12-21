@@ -25,7 +25,9 @@ object ShortestPaths {
   val bud = new Bud(Seq(link, path), Seq(strata0Rules))
 
   def main(args: Array[String]): Unit = {
-    println("Hello World")
     bud.tick()
+    link.foreach(println)
+    println()
+    path.foreach(println)
   }
 }
