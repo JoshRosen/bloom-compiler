@@ -1,3 +1,5 @@
+package edu.berkeley.cs.boom.bloomscala
+
 import scala.collection.mutable
 
 class Table[T] extends BudCollection[T] {

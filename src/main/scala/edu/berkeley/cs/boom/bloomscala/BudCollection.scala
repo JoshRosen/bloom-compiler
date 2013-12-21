@@ -1,3 +1,6 @@
+package edu.berkeley.cs.boom.bloomscala
+
+
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.collection.mutable
 

@@ -1,3 +1,5 @@
+package edu.berkeley.cs.boom.bloomscala
+
 import com.typesafe.scalalogging.slf4j.Logging
 
 class Stratum(rules: Iterable[Rule], tables: Iterable[Table[_]]) extends Logging {

@@ -1,4 +1,4 @@
-// https://github.com/bloom-lang/bud/blob/101ad1985ebccbd5f814365a89c6b5af293b5dbe/lib/bud.rb
+package edu.berkeley.cs.boom.bloomscala
 
 class Bud(tables: Iterable[Table[_]], stratifiedRules: Iterable[Iterable[Rule]]) {
 

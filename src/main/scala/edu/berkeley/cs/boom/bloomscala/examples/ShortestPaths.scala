@@ -1,3 +1,7 @@
+package edu.berkeley.cs.boom.bloomscala.examples
+
+import edu.berkeley.cs.boom.bloomscala.{Bud, Rule, Table}
+
 object ShortestPaths {
   val link: Table[(Char, Char, Int)] = new Table[(Char, Char, Int)]
   // from, to, cost

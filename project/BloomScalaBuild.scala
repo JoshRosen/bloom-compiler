@@ -8,7 +8,7 @@ object BloomScalaBuild extends Build {
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
       name := "bloom-scala",
-      //organization := "edu.berkeley.cs.amplab",
+      organization := "edu.berkeley.cs.boom",
       version := "0.1-SNAPSHOT",
       scalaVersion := "2.10.3",
       resolvers ++= Seq(
