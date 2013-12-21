@@ -1,9 +1,16 @@
 // https://github.com/bloom-lang/bud/blob/101ad1985ebccbd5f814365a89c6b5af293b5dbe/lib/bud.rb
 
-class Bud(rules: Iterable[Rule]) {
+class Bud(tables: Iterable[Table[_]], stratifiedRules: Iterable[Iterable[Rule]]) {
 
-  def tick {
+  var budtime = 0
 
+  val strata = stratifiedRules.map(new Stratum(_, tables))
+
+  def tick() {
+    // Receive inbound
+    strata.foreach(_.fixpoint())
+    // Flush channels in order
+    // Reset periodics
   }
   // Strata
   // Budtime

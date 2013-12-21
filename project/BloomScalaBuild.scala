@@ -18,7 +18,9 @@ object BloomScalaBuild extends Build {
         "JBoss Repository" at "http://repository.jboss.org/nexus/content/repositories/releases/"
       ),
       libraryDependencies ++= Seq(
-        "org.scalaz" %% "scalaz-core" % "7.0.5"
+        "org.scalaz" %% "scalaz-core" % "7.0.5",
+        "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
+        "org.slf4j" % "slf4j-log4j12" % "1.7.5"
       )
     )
   )

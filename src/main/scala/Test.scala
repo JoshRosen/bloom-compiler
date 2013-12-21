@@ -1,15 +1,15 @@
-import scalaz._
-import Scalaz._
-
 object ShortestPaths {
-  val link: Table[(Char, Char, Int)] = ???
-  val path: Table[(Char, Char, Char, Int)] = ???
+  val link: Table[(Char, Char, Int)] = new Table[(Char, Char, Int)]
+  // from, to, cost
+  val path: Table[(Char, Char, Char, Int)] = new Table[(Char, Char, Char, Int)]
+  // from, to, next, cost
+
   //val shortest: Table[(Char, Char, Char, Int)] = ???
 
-  val j = link.join(path)(1)
+  val j = link.join(path, x => x._2, (x: (Char, Char, Char, Int)) => x._1)
 
 
-  val rules = Seq[Rule](
+  val strata0Rules = Seq[Rule](
     link <= ('a', 'b', 1),
     link <= ('a', 'b', 3),
     link <= ('b', 'c', 1),
@@ -22,9 +22,10 @@ object ShortestPaths {
     //shortest <= path
   )
 
-  val bud = new Bud(rules)
+  val bud = new Bud(Seq(link, path), Seq(strata0Rules))
 
   def main(args: Array[String]): Unit = {
     println("Hello World")
+    bud.tick()
   }
 }
