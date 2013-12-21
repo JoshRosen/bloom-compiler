@@ -1,8 +1,11 @@
 package edu.berkeley.cs.boom.bloomscala.examples
 
-import edu.berkeley.cs.boom.bloomscala.{Bud, Rule, Table}
+import edu.berkeley.cs.boom.bloomscala.{Rule, Bud}
+import edu.berkeley.cs.boom.bloomscala.collections.Table
 
 object ShortestPaths {
+  implicit val bud = new Bud()
+
   val link: Table[(Char, Char, Int)] = new Table[(Char, Char, Int)]
   // from, to, cost
   val path: Table[(Char, Char, Char, Int)] = new Table[(Char, Char, Char, Int)]
@@ -25,8 +28,7 @@ object ShortestPaths {
     }//,
     //shortest <= path
   )
-
-  val bud = new Bud(Seq(link, path), Seq(strata0Rules))
+  bud.addStrata(strata0Rules)
 
   def main(args: Array[String]): Unit = {
     bud.tick()

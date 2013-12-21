@@ -1,8 +1,9 @@
-package edu.berkeley.cs.boom.bloomscala
+package edu.berkeley.cs.boom.bloomscala.collections
 
 import scala.collection.mutable
+import edu.berkeley.cs.boom.bloomscala.Bud
 
-class Table[T] extends BudCollection[T] {
+class Table[T](implicit bud: Bud) extends BudCollection[T] {
   private val storage = new mutable.HashSet[T]
 
   override def size: Int = storage.size

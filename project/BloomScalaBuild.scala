@@ -20,7 +20,8 @@ object BloomScalaBuild extends Build {
       libraryDependencies ++= Seq(
         "org.scalaz" %% "scalaz-core" % "7.0.5",
         "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
-        "org.slf4j" % "slf4j-log4j12" % "1.7.5"
+        "org.slf4j" % "slf4j-log4j12" % "1.7.5",
+        "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
       )
     )
   )
