@@ -15,10 +15,10 @@ class BabyBud {
       scratch <= ("a", "c", 3, 4),
       scratch2 <= ("a", "b"),
       table <= ("a", "b", 1, 2),
-      table <= ("x", "y", 9, 8)
+      table <= ("x", "y", 9, 8),
 
-      //scratch <+ ("c", "d", 5, 6),
-      //table <+ ("c", "d", 5, 6),
+      scratch <+ ("c", "d", 5, 6),
+      table <+ ("c", "d", 5, 6)
       //table <- ("a", "b", 1, 2),
     )
   )
@@ -29,9 +29,14 @@ class CollectionsSuite extends FunSuite {
 
   test("simple deduction") {
     val program = new BabyBud()
+    assert(program.table.size === 0)
     program.bud.tick()
     assert(program.scratch.size === 2)
     assert(program.scratch2.size === 1)
     assert(program.table.size === 2)
+    program.bud.tick()
+    assert(program.scratch.size === 3)
+    assert(program.scratch2.size === 1)
+    assert(program.table.size === 3)
   }
 }

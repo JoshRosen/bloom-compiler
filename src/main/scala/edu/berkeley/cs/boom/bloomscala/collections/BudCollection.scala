@@ -1,18 +1,36 @@
 package edu.berkeley.cs.boom.bloomscala.collections
 
 import scala.collection.mutable
-import edu.berkeley.cs.boom.bloomscala.{Bud, InstantMergeSingle, InstantMerge, DeferredMerge}
+import edu.berkeley.cs.boom.bloomscala._
+import edu.berkeley.cs.boom.bloomscala.InstantMerge
+import edu.berkeley.cs.boom.bloomscala.InstantMergeSingle
+import edu.berkeley.cs.boom.bloomscala.DeferredMerge
+import com.typesafe.scalalogging.slf4j.Logging
 
 
-abstract class BudCollection[T](implicit bud: Bud) {
+abstract class BudCollection[T](implicit bud: Bud) extends Logging {
 
-  def <+(other: BudCollection[T]): DeferredMerge[T] =
+  bud.addTable(this)
+
+  /** "Normal" tuples */
+  protected val storage = new mutable.HashSet[T]
+  /** Delta for the RHS of rules during semi-naive evaluation */
+  protected val delta: mutable.Set[T] = new mutable.HashSet[T]
+  /** The LHS tuples currently being produced during semi-naive evaluation */
+  protected val newDelta: mutable.Set[T] = new mutable.HashSet[T]
+  /** Tuples deferred until the next tick */
+  private val pending = new mutable.HashSet[T]
+
+  def <+(other: BudCollection[T]): Rule =
     new DeferredMerge[T](this, other)
 
-  def <=(other: BudCollection[T]): InstantMerge[T] =
+  def <+(value: T): Rule =
+    new DeferredMergeSingle[T](this, value)
+
+  def <=(other: BudCollection[T]): Rule =
     new InstantMerge[T](this, other)
 
-  def <=(value: T): InstantMergeSingle[T] =
+  def <=(value: T): Rule =
     new InstantMergeSingle[T](this, value)
 
   def join[U, K](other: BudCollection[U], leftKey: T => K, rightKey: U => K): BudCollection[(T, U)] = {
@@ -21,11 +39,35 @@ abstract class BudCollection[T](implicit bud: Bud) {
 
   def map[R](f: T => R): BudCollection[R] = new MappedBudCollection[R, T](this, f)
 
-  def size: Int = 0  // TODO
+  def size: Int = storage.union(delta).size
 
-  def doInsert(item: T) {}  // TODO
+  private[bloomscala] def doInsert(item: T) {
+    delta += item
+  }
 
-  def foreach(f: T => Unit) {}
+  private[bloomscala] def doPendingInsert(item: T) {
+    pending += item
+  }
+
+  private[bloomscala] def doPendingDelete(item: T) {}  // TODO
+
+  def foreach(f: T => Unit) { storage.union(delta).foreach(f) }
+
+  private[bloomscala] def mergeDeltas(): Boolean = {
+    // TODO: should this use newDelta?
+    // Returns 'true' if we produced a delta during this round of semi-naive evaluation.
+    val changed = delta.map { storage.add }.fold(false)(_ || _)
+    delta.clear()
+    changed
+  }
+
+  private[bloomscala] def tick() {
+    if (!pending.isEmpty) {
+      logger.debug(s"Merging pending inserts: $pending")
+    }
+    storage ++= pending
+    pending.clear()
+  }
   //  def <+-(other: BudCollection[T])
 
   // schema

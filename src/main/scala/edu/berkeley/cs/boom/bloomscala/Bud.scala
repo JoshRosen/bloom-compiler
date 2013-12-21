@@ -2,11 +2,16 @@ package edu.berkeley.cs.boom.bloomscala
 
 import edu.berkeley.cs.boom.bloomscala.collections.{Scratch, BudCollection}
 import scala.collection.mutable
+import com.typesafe.scalalogging.slf4j.Logging
 
-class Bud {
+class Bud extends Logging {
 
   private val tables: mutable.Set[BudCollection[_]] = new mutable.HashSet[BudCollection[_]]
   private val stratifiedRules: mutable.ArrayBuffer[Iterable[Rule]] = new mutable.ArrayBuffer[Iterable[Rule]]
+
+  private[bloomscala] def addTable(table: BudCollection[_]) {
+    tables += table
+  }
 
   def addStrata(rules: Iterable[Rule]) {
     stratifiedRules += rules
@@ -18,14 +23,13 @@ class Bud {
 
   def tick() {
     // Receive inbound
-    strata.foreach(_.fixpoint())
+    tables.foreach(_.tick())
+    strata.zipWithIndex.foreach{ case (stratum, index) =>
+      logger.debug(s"Computing stratum $index")
+      stratum.fixpoint()
+    }
     // Flush channels in order
     // Reset periodics
-    tables.foreach {
-      case scratch: Scratch[_] =>
-        scratch.clear()
-      case _ =>
-    }
   }
   // Strata
   // Budtime

@@ -2,16 +2,18 @@ package edu.berkeley.cs.boom.bloomscala.collections
 
 import scala.collection.mutable
 import edu.berkeley.cs.boom.bloomscala.Bud
+import com.typesafe.scalalogging.slf4j.Logging
 
-class Table[T](implicit bud: Bud) extends BudCollection[T] {
-  private val storage = new mutable.HashSet[T]
+class Table[T](implicit bud: Bud) extends BudCollection[T] with Logging {
+  private val toDelete = new mutable.HashSet[T]
 
-  override def size: Int = storage.size
-
-  override def doInsert(item: T) {
-    storage += item
+  override def doPendingDelete(item: T) {
+    toDelete += item
   }
 
-  override def foreach(f: T => Unit) { storage.foreach(f) }
-
+  override def tick() {
+    storage --= toDelete
+    toDelete.clear()
+    super.tick()
+  }
 }
