@@ -6,15 +6,19 @@ import edu.berkeley.cs.boom.bloomscala.collections.Table
 object ShortestPaths {
   implicit val bud = new Bud()
 
-  val link: Table[(Char, Char, Int)] = new Table[(Char, Char, Int)]
-  // from, to, cost
-  val path: Table[(Char, Char, Char, Int)] = new Table[(Char, Char, Char, Int)]
-  // from, to, next, cost
+  type Node = Char
+  type Cost = Int
 
-  //val shortest: Table[(Char, Char, Char, Int)] = ???
+  case class Link(from: Node, to: Node, cost: Cost)
+  implicit def linkFromTuple(tuple: (Node, Node, Cost)): Link = Link.tupled(tuple)
+  case class Path(from: Node, to: Node, next: Node, cost: Cost)
+  implicit def pathFromTuple(tuple: (Node, Node, Node, Cost)): Path = Path.tupled(tuple)
 
-  val j = link.join(path, x => x._2, (x: (Char, Char, Char, Int)) => x._1)
+  val link = new Table[Link]
+  val path = new Table[Path]
+  val shortest = new Table[Path]
 
+  val j = link.join(path, _.from, (x: Path) => x.to)
 
   val strata0Rules = Seq[Rule](
     link <= ('a', 'b', 1),
@@ -22,11 +26,13 @@ object ShortestPaths {
     link <= ('b', 'c', 1),
     link <= ('c', 'd', 1),
     link <= ('d', 'e', 1),
-    path <= link.map {x => (x._1, x._2, x._2, x._3)},
+    path <= link.map {l => (l.from, l.to, l.to, l.cost) },
     path <= j.map { case (l, p) =>
-      (l._1, p._2, p._1, p._4 + l._3)
-    }//,
-    //shortest <= path
+      (l.from, p.to, p.from, p.cost + l.cost)
+    },
+    shortest <= path.reduceByKey{ Seq(_, _).minBy(_.cost)
+
+    }
   )
   bud.addStrata(strata0Rules)
 

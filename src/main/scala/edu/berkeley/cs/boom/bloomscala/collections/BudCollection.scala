@@ -27,14 +27,19 @@ abstract class BudCollection[T](implicit bud: Bud) extends Logging {
   def <+(value: T): Rule =
     new DeferredMergeSingle[T](this, value)
 
-  def <=(other: BudCollection[T]): Rule =
-    new InstantMerge[T](this, other)
+  def <=[V](other: BudCollection[V])(implicit conv: V => T): Rule =
+    new InstantMerge[T](this, other.map(conv))
 
   def <=(value: T): Rule =
     new InstantMergeSingle[T](this, value)
 
   def join[U, K](other: BudCollection[U], leftKey: T => K, rightKey: U => K): BudCollection[(T, U)] = {
     new JoinCollection[T, U, K](this, other)(leftKey, rightKey)
+  }
+
+  def argagg[K, S](agg: ExemplaryAggregate[S],
+                   groupingKey: T => K, aggItem: T => S): BudCollection[T] = {
+    new ExemplaryAggregatedBudCollection[K, S, T](this, agg, groupingKey, aggItem)
   }
 
   def map[R](f: T => R): BudCollection[R] = new MappedBudCollection[R, T](this, f)
@@ -74,6 +79,16 @@ abstract class BudCollection[T](implicit bud: Bud) extends Logging {
   // keys
   // cols
   // name
+}
+
+
+class ExemplaryAggregatedBudCollection[K, S, T](
+    prev: BudCollection[T],
+    agg: ExemplaryAggregate[S],
+    groupingKey: T => K,
+    aggItem: T => S)
+  (implicit bud: Bud) extends BudCollection[T] {
+
 }
 
 class MappedBudCollection[U, T](prev: BudCollection[T], mapF: T => U)(implicit bud: Bud) extends BudCollection[U] {

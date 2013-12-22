@@ -1,6 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import edu.berkeley.cs.boom.bloomscala.collections.{Scratch, BudCollection}
+import edu.berkeley.cs.boom.bloomscala.collections.BudCollection
 import scala.collection.mutable
 import com.typesafe.scalalogging.slf4j.Logging
 
@@ -31,10 +31,8 @@ class Bud extends Logging {
     // Flush channels in order
     // Reset periodics
   }
-  // Strata
   // Budtime
   // Connections
-  // Tables
 
   // ip
   // port
@@ -49,11 +47,7 @@ class Bud extends Logging {
 
   //def run()
 
-  //def tick()
-
  // def receive_inbound
-
-  //def stratum_fixpoint
 
  // def reset_periodics
 
