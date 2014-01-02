@@ -29,10 +29,10 @@ object ShortestPaths {
     path <= link.map {l => (l.from, l.to, l.to, l.cost) },
     path <= j.map { case (l, p) =>
       (l.from, p.to, p.from, p.cost + l.cost)
-    },
-    shortest <= path.reduceByKey{ Seq(_, _).minBy(_.cost)
-
     }
+    //shortest <= path.reduceByKey{ Seq(_, _).minBy(_.cost)
+
+    //}
   )
   bud.addStrata(strata0Rules)
 
