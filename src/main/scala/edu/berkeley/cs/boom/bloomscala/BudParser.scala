@@ -1,6 +1,5 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import scala.util.parsing.combinator._
 import scala.util.parsing.input.Positional
 import edu.berkeley.cs.boom.bloomscala.BloomCollectionType.BloomCollectionType
 import scala.util.parsing.combinator.lexical.StdLexical
@@ -10,9 +9,11 @@ import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 case class CollectionDeclaration(
     collectionType: BloomCollectionType,
     name: String,
-    keys: List[String],
-    values: List[String])
+    keys: List[Field],
+    values: List[Field])
   extends Positional
+
+case class Field(name: String, typ: BloomFieldType.BloomFieldType) extends Positional
 
 case class FieldRef(collectionName: String, fieldName: String) extends Positional
 
@@ -41,9 +42,21 @@ object BloomCollectionType extends Enumeration {
   )
 }
 
+object BloomFieldType extends Enumeration {
+  type BloomFieldType = Value
+  val BloomInt, BloomString = Value
+  val nameToType: Map[String, BloomFieldType] = Map(
+    "int" -> BloomInt,
+    "string" -> BloomString
+  )
+}
+
 class BudLexer extends StdLexical {
-  delimiters += ( "(" , ")" , "," , "@", "[", "]", ".", "=>", "{", "}", "|")
+  delimiters += ( "(" , ")" , "," , "@", "[", "]", ".", "=>", "{", "}", "|", ":")
+  // TODO: leaving this out should produce an error message, but instead it silently
+  // fails by building an alternatives() parser that matches nothing.
   reserved ++= BloomCollectionType.nameToType.keys
+  reserved ++= BloomFieldType.nameToType.keys
   delimiters ++= BloomOp.symbolToOp.keys
 }
 
@@ -61,12 +74,14 @@ trait BudParsers extends StandardTokenParsers {
 
   def collectionType = alternatives(BloomCollectionType.nameToType, "Invalid collection type")
   def bloomOp = alternatives(BloomOp.symbolToOp, "Invalid operator")
+  def bloomFieldType = alternatives(BloomFieldType.nameToType, "Invalid field type")
+
 
   /********** Declarations **********/
 
   def collectionDeclaration = {
-    def columnsDeclaration: Parser[List[String]] = listOf(tableColumn)
-    def tableColumn = ident  // TODO
+    def columnsDeclaration: Parser[List[Field]] = listOf(tableColumn)
+    def tableColumn = ident ~ ":" ~ bloomFieldType ^^ { case i ~ ":" ~ f => Field(i, f) }
 
     positioned((collectionType ~ ident ~ "," ~ opt(columnsDeclaration ~ opt("=>" ~> columnsDeclaration))) ^^ {
       case collectionType ~ ident ~ "," ~ keyVals =>
@@ -109,9 +124,7 @@ object BudParsersMain extends BudParsers {
   def main(args: Array[String]) {
     val p =
       """
-      table connect, [addr, client] => [nick]
-      nodelist <= connect { |c| [c.client, c.nick] }
-      //mcast <~ (mcast * nodelist).pairs { |m,n| [n.key, m.val] }
+      table link, [from: string, to: string, cost: int]
       """.stripMargin
     val tokens = new lexical.Scanner(p)
     val result = phrase(program)(tokens)
