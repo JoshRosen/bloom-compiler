@@ -38,10 +38,10 @@ trait BudParser extends StandardTokenParsers {
 
   /********** Statements **********/
 
-  def fieldRef = (ident ~ "." ~ ident) ^^ {
+  def fieldRef = positioned((ident ~ "." ~ ident) ^^ {
     case collectionName ~ "." ~ field =>
       FieldRef(collectionName, field)
-  }
+  })
 
   def colTerm = fieldRef
   def colExpr: Parser[ColExpr] = {
@@ -51,7 +51,7 @@ trait BudParser extends StandardTokenParsers {
   def predicate = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
 
   def statement = {
-    def lhs = ident
+    def lhs = collectionRef
     def rhs = collectionMap | join
 
     def collection = collectionRef | derivedCollection
@@ -83,27 +83,5 @@ object BudParser extends BudParser {
       case colDecl: CollectionDeclaration => Left(colDecl)
       case stmt: Statement => Right(stmt)
     }
-  }
-}
-
-object BudParserMain extends BudParser {
-  def main(args: Array[String]) {
-    val p =
-      """
-      table link, [from: string, to: string, cost: int]
-      table path, [from: string, to: string, nxt: string, cost: int]
-      table shortest, [from: string, to: string] => [nxt: string, cost: string]
-      // Recursive rules to define all paths from links
-      // Base case: every link is a path
-      path <= link {|l| [l.from, l.to, l.to, l.cost]}
-      // Inductive case: make a path of length n+1 by connecting a link to a
-      // path of length n
-      path <= (link * path) on (link.to == path.from) { |l, p|
-        [l.from, p.to, l.to, l.cost+p.cost]
-      }
-      """.stripMargin
-    val result = BudParser.parseProgram(p)
-    import sext._
-    println("The results are:\n" + result.treeString)
   }
 }

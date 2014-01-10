@@ -4,6 +4,7 @@ import scala.util.parsing.input.Positional
 import edu.berkeley.cs.boom.bloomscala.parser.CollectionType.CollectionType
 import edu.berkeley.cs.boom.bloomscala.parser.FieldType.FieldType
 import edu.berkeley.cs.boom.bloomscala.parser.BloomOp.BloomOp
+import edu.berkeley.cs.boom.bloomscala.AnalysisInfo
 
 
 case class CollectionDeclaration(
@@ -19,7 +20,10 @@ case class CollectionDeclaration(
 }
 
 /** Valid RHS's of statements */
-sealed trait StatementRHS
+sealed trait StatementRHS {
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration]
+  def pretty: String = toString
+}
 
 /** Valid targets of the map ({|| []}) operation */
 sealed trait MappedCollectionTarget
@@ -29,20 +33,42 @@ sealed trait DerivedCollection extends StatementRHS with MappedCollectionTarget
 
 case class MappedCollection(collection: MappedCollectionTarget, shortNames: List[String], colExprs: List[ColExpr]) extends DerivedCollection with Positional {
   var schema: Option[List[FieldType]] = None
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration] = {
+    colExprs.flatMap(_.getDependencies(analysisInfo)).toSet
+  }
 }
-case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Any) extends DerivedCollection
+case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Any) extends DerivedCollection {
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration] = {
+    Set(analysisInfo.collections(a), analysisInfo.collections(b))
+  }
+}
 
-case class CollectionRef(name: String) extends MappedCollectionTarget with Positional
+case class CollectionRef(name: String) extends MappedCollectionTarget with Positional {
+  def pretty: String = name
+}
+ // TODO with StatementRHS
 case class Field(name: String, typ: FieldType) extends Positional
-case class FieldRef(collectionName: String, fieldName: String) extends ColExpr
+
+// If `collectionName` is an alias, it's expanded during the typechecking phase.
+case class FieldRef(var collectionName: String, fieldName: String) extends ColExpr {
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration] = {
+    Set(analysisInfo.collections(collectionName)(this.pos))
+  }
+}
 
 abstract class ColExpr extends Positional {
   /** Set during typechecking */
   var typ: Option[FieldType] = None
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration]
 }
-case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
+case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr {
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration] =
+    lhs.getDependencies(analysisInfo) ++ rhs.getDependencies(analysisInfo)
+}
 
-case class Statement(lhs: Any, op: BloomOp, rhs: StatementRHS) extends Positional
+case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends Positional {
+  def pretty: String = s"${lhs.pretty} ${BloomOp.opToSymbol(op)} ${rhs.pretty}"
+}
 
 case class EqualityPredicate[T](a: T, b: T) extends Positional
 
@@ -56,6 +82,7 @@ object BloomOp extends Enumeration {
     "<-" -> Delete,
     "<+-" -> DeferredUpdate
   )
+  val opToSymbol = symbolToOp.map(_.swap)
 }
 
 object CollectionType extends Enumeration {
