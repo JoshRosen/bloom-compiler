@@ -43,10 +43,12 @@ case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Any) 
   }
 }
 
-case class CollectionRef(name: String) extends MappedCollectionTarget with Positional {
-  def pretty: String = name
+case class CollectionRef(name: String) extends MappedCollectionTarget with Positional with StatementRHS {
+  override def pretty: String = name
+
+  def getDependencies(analysisInfo: AnalysisInfo): Set[CollectionDeclaration] =
+    Set(analysisInfo.collections(this))
 }
- // TODO with StatementRHS
 case class Field(name: String, typ: FieldType) extends Positional
 
 // If `collectionName` is an alias, it's expanded during the typechecking phase.

@@ -52,7 +52,7 @@ trait BudParser extends StandardTokenParsers {
 
   def statement = {
     def lhs = collectionRef
-    def rhs = collectionMap | join
+    def rhs = collectionMap | join | collectionRef
 
     def collection = collectionRef | derivedCollection
     def derivedCollection = join

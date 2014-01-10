@@ -9,7 +9,6 @@ trait CompilerUtils {
   }
 
   def fail(msg: String)(implicit pos: Position): Nothing = {
-    System.err.println(s"${pos.line}:${pos.column} $msg:\n${pos.longString}")
-    sys.exit(-1)
+    throw new CompilerException(s"${pos.line}:${pos.column} $msg:\n${pos.longString}")
   }
 }

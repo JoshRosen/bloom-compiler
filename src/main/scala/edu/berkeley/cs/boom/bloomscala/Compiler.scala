@@ -26,6 +26,11 @@ object Compiler {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-    compile(p)
+    try {
+      compile(p)
+    } catch { case e: Exception =>
+      println(e.getMessage)
+      sys.exit(-1)
+    }
   }
 }
