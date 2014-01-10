@@ -8,7 +8,7 @@ object Compiler {
     val parseResults = BudParser.parseProgram(src)
     val info = new AnalysisInfo(parseResults)
     new Typer(info).run()
-    new RuleGraphBuilder(info).run()
+    new PrecedenceGraphBuilder(info).run()
   }
 
   def main(args: Array[String]) {

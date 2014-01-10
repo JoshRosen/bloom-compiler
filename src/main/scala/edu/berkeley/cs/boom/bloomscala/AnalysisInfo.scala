@@ -3,10 +3,7 @@ package edu.berkeley.cs.boom.bloomscala
 import scala.util.parsing.input.Position
 import edu.berkeley.cs.boom.bloomscala.parser._
 import scala.collection.mutable
-import scalax.collection.{Graph => BaseGraph}
-import scalax.collection.mutable.Graph
-import scalax.collection.edge.LkDiEdge
-import scalax.collection.io.dot._
+
 import com.typesafe.scalalogging.slf4j.Logging
 
 /**
@@ -14,23 +11,7 @@ import com.typesafe.scalalogging.slf4j.Logging
  */
 private class AnalysisInfo(val parseResults: List[Either[CollectionDeclaration, Statement]]) {
   val collections = new CollectionInfo
-  val ruleGraph = Graph[CollectionDeclaration, LkDiEdge]()
 
-  def graphToDot: String = {
-     val dotRoot = DotRootGraph(directed = true, id = None)
-     // TODO: it was annoying that I had to use BaseGraph here.
-     // I should open a bug report with scala-graph:
-     def edgeTransformer(innerEdge: BaseGraph[CollectionDeclaration, LkDiEdge]#EdgeT):
-       Option[(DotGraph, DotEdgeStmt)] = {
-        val edge = innerEdge.edge
-        val label = edge.label.asInstanceOf[Statement]
-        val from = edge.from.value.asInstanceOf[CollectionDeclaration].name
-        val to = edge.to.value.asInstanceOf[CollectionDeclaration].name
-        Some(dotRoot,
-            DotEdgeStmt(from, to, List(DotAttr("label", label.pretty))))
-      }
-     graph2DotExport(ruleGraph).toDot(dotRoot, edgeTransformer)
-   }
 }
 
 /**
