@@ -4,7 +4,13 @@ import scala.collection.{immutable, mutable}
 import scala.util.parsing.input.Position
 import com.typesafe.scalalogging.slf4j.Logging
 import java.util.concurrent.atomic.AtomicInteger
-import edu.berkeley.cs.boom.bloomscala.BloomFieldType.BloomFieldType
+import edu.berkeley.cs.boom.bloomscala.parser._
+import edu.berkeley.cs.boom.bloomscala.parser.CollectionDeclaration
+import scala.Some
+import edu.berkeley.cs.boom.bloomscala.parser.Statement
+import edu.berkeley.cs.boom.bloomscala.parser.PlusStatement
+import edu.berkeley.cs.boom.bloomscala.parser.FieldType.FieldType
+import edu.berkeley.cs.boom.bloomscala.parser.FieldType
 
 class Analyzer(parseResults: List[Either[CollectionDeclaration, Statement]]) extends Logging {
 
@@ -25,15 +31,15 @@ class Analyzer(parseResults: List[Either[CollectionDeclaration, Statement]]) ext
     sys.exit(-1)
   }
 
-  def determineColExprType(colExpr: ColExpr)(implicit collectionInfo: Map[String, CollectionDeclaration]): BloomFieldType =  {
+  def determineColExprType(colExpr: ColExpr)(implicit collectionInfo: Map[String, CollectionDeclaration]): FieldType =  {
     colExpr.typ match {
       case Some(typ) => typ
       case None =>
         colExpr.typ = colExpr match {
           case PlusStatement(a, b) =>
-            ensure(determineColExprType(a) == BloomFieldType.BloomInt, "Plus operand is not int", a.pos)
-            ensure(determineColExprType(b) == BloomFieldType.BloomInt, "Plus operand is not int", a.pos)
-            Some(BloomFieldType.BloomInt)
+            ensure(determineColExprType(a) == FieldType.BloomInt, "Plus operand is not int", a.pos)
+            ensure(determineColExprType(b) == FieldType.BloomInt, "Plus operand is not int", a.pos)
+            Some(FieldType.BloomInt)
           case fieldRef: FieldRef =>
             val collection = collectionInfo.get(fieldRef.collectionName)
             collection.getOrElse(
@@ -108,7 +114,7 @@ object AnalyzerMain {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-    val result = BudParsers.parseProgram(p)
+    val result = BudParser.parseProgram(p)
     val analysis = new Analyzer(result).analyze()
     import sext._
     println("The results are:\n" + analysis.treeString)
