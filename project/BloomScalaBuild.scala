@@ -25,7 +25,8 @@ object BloomScalaBuild extends Build {
         "com.assembla.scala-incubator" % "graph-core_2.10" % "1.7.2",
         "com.assembla.scala-incubator" % "graph-dot_2.10" % "1.7.0",
         "com.chuusai" % "shapeless" % "2.0.0-M1" cross CrossVersion.full,
-        "com.github.nikita-volkov" % "sext" % "0.2.3"
+        "com.github.nikita-volkov" % "sext" % "0.2.3",
+        "com.quantifind" %% "sumac" % "0.2.3"
       )
     )
   )
