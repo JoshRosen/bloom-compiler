@@ -21,6 +21,15 @@ case class CollectionDeclaration(
     keys: List[Field],
     values: List[Field])
   extends Positional {
+  /** Set by the Stratifier */
+  var stratum: Int = 0
+  /** Used by the Stratifier to track its graph traversal status */
+  var stratificationStatus = "init"
+  /**
+   * Modified by the Stratifier to record whether this node is reachable
+   * via a path in the precedence graph that contains a negated edge.
+   */
+  var reachableViaPathWithNegation = false
   val schema: List[FieldType.FieldType] = (keys ++ values).map(_.typ)
   def getField(name: String): Option[Field] = {
     (keys ++ values).find(_.name == name)
