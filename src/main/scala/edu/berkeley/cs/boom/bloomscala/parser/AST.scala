@@ -54,6 +54,13 @@ case class MappedCollection(collection: MappedCollectionTarget, shortNames: List
     colExprs.flatMap(_.getDependencies(analysisInfo)).toSet
   }
 }
+
+case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection with Positional {
+  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
+    Set((analysisInfo.collections(a), false), (analysisInfo.collections(b), true))
+  }
+}
+
 case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Any) extends DerivedCollection {
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
     Set((analysisInfo.collections(a), false), (analysisInfo.collections(b), false))

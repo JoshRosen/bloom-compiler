@@ -66,6 +66,12 @@ class Typer(analysisInfo: AnalysisInfo) extends Logging with CompilerUtils {
             val schema = getSchema(mc)
             ensure(schema == lhsCollection.schema,
               s"RHS has wrong schema; expected ${lhsCollection.schema} but got ${mc.schema.get}", mc.pos)
+          case notin: NotIn =>
+            val aSchema = analysisInfo.collections(notin.a).schema
+            val bSchema = analysisInfo.collections(notin.b).schema
+            ensure(aSchema == bSchema, s"notin called with incompatible schemas: $aSchema $bSchema", notin.pos)
+            ensure(aSchema == lhsCollection.schema,
+              s"RHS has wrong schema; expected ${lhsCollection.schema} but got $aSchema", notin.pos)
         }
     }
   }

@@ -7,12 +7,14 @@ import scalax.collection.mutable.Graph
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.io.dot._
 import scala.Some
+import edu.berkeley.cs.boom.bloomscala.Stratifier.{StratifiedRules, StratifiedCollections}
 
-
-class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
-
+object Stratifier {
   type StratifiedCollections = Seq[Set[CollectionDeclaration]]
   type StratifiedRules = Seq[Set[Statement]]
+}
+
+class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
 
   /**
    * For simplicity, this is a multigraph.  To make it into a regular digraph,
@@ -47,7 +49,7 @@ class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
    * Edges are labeled according to whether the dependency is negated and whether
    * that negation is temporal.
    */
-  private def buildPrecedenceGraph() {
+  private[bloomscala] def buildPrecedenceGraph() {
     // The nodes of the graph are IDB predicates (i.e. collections):
     analysisInfo.collections.foreach(graph.add)
     // Get the rules:
@@ -66,7 +68,7 @@ class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
    * Attempt to stratify the program.  A program is temporally stratifiable
    * if its precedence graph contains no cycles with non-temporal negation.
    */
-  private def stratifyCollections(): StratifiedCollections = {
+  private[bloomscala] def stratifyCollections(): StratifiedCollections = {
     def calcStratum(node: graph.NodeT, reachableViaPathWithNegation: Boolean,
                     pathHasTemporalEdge: Boolean, path: Seq[graph.NodeT]): Int = {
       logger.debug(s"Visting node '${node.name}'")

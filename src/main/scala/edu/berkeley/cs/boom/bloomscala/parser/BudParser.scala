@@ -52,16 +52,20 @@ trait BudParser extends StandardTokenParsers {
 
   def statement = {
     def lhs = collectionRef
-    def rhs = collectionMap | join | collectionRef
+    def rhs = collectionMap | derivedCollection | collectionRef
 
     def collection = collectionRef | derivedCollection
-    def derivedCollection = join
+    def derivedCollection = join | notin
 
     // i.e. (link * path) on (link.to == path.from)
     def join = "(" ~ collectionRef ~ "*" ~ collectionRef ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ^^ {
       case "(" ~ a ~ "*" ~ b ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" =>
         JoinedCollection(a, b, predicate)
     }
+
+    def notin = positioned(collectionRef ~ "." ~ "notin" ~ "(" ~ collectionRef ~")" ^^ {
+      case a ~ "." ~ "notin" ~ "(" ~ b ~ ")" => new NotIn(a, b)
+    })
 
     def collectionMap = positioned(collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ listOf(colExpr) <~ "}" ^^ {
       case collection ~ collectionShortNames ~ colExprs =>

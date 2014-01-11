@@ -9,6 +9,6 @@ class Lexer extends StdLexical {
   // fails by building an alternatives() parser that matches nothing.
   reserved ++= CollectionType.nameToType.keys
   reserved ++= FieldType.nameToType.keys
-  reserved += "on"
+  reserved ++= Seq("on", "notin")
   delimiters ++= BloomOp.symbolToOp.keys
 }

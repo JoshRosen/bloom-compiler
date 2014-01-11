@@ -1,14 +1,20 @@
 package edu.berkeley.cs.boom.bloomscala
 
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
+import com.typesafe.scalalogging.slf4j.Logging
 
 
-object Compiler {
+object Compiler extends Logging {
   def compile(src: String) {
-    val parseResults = BudParser.parseProgram(src)
-    val info = new AnalysisInfo(parseResults)
-    new Typer(info).run()
-    new Stratifier(info).run()
+    try {
+      val parseResults = BudParser.parseProgram(src)
+      val info = new AnalysisInfo(parseResults)
+      new Typer(info).run()
+      new Stratifier(info).run()
+    } catch { case e: Exception =>
+      logger.error(s"Compilation failed: ${e.getMessage}")
+      throw e
+    }
   }
 
   def main(args: Array[String]) {
