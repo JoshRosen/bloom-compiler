@@ -10,7 +10,7 @@ import scala.Some
 import edu.berkeley.cs.boom.bloomscala.parser.PlusStatement
 
 
-class Typer(analysisInfo: AnalysisInfo) extends Logging with CompilerUtils {
+class Typer(implicit analysisInfo: AnalysisInfo) extends Logging with CompilerUtils {
   def getType(colExpr: ColExpr)(implicit collectionInfo: CollectionInfo): FieldType =  {
     colExpr.typ match {
       case Some(typ) => typ

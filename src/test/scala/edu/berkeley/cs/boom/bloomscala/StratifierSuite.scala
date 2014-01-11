@@ -10,12 +10,14 @@ class StratifierSuite extends FunSuite with Logging {
 
   def stratify(program: String): StratifiedCollections = {
     val parseResults = BudParser.parseProgram(program)
-    val info = new AnalysisInfo(parseResults)
-    new Typer(info).run()
+    implicit val info = new AnalysisInfo(parseResults)
+    new Typer().run()
     try {
-      val stratifier = new Stratifier(info)
+      val stratifier = new Stratifier()
       stratifier.buildPrecedenceGraph()
-      stratifier.stratifyCollections()
+      val strata = stratifier.stratifyCollections()
+      stratifier.stratifyRules(strata)
+      strata
     } catch { case e: Exception =>
       logger.error(e.getMessage)
       throw e

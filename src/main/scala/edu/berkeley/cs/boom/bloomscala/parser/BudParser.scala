@@ -18,9 +18,6 @@ trait BudParser extends StandardTokenParsers {
   def bloomOp = alternatives(BloomOp.symbolToOp, "Invalid operator")
   def fieldType = alternatives(FieldType.nameToType, "Invalid field type")
 
-  def collectionRef = positioned(ident ^^ CollectionRef)
-
-
   /********** Declarations **********/
 
   def collectionDeclaration = {
@@ -35,8 +32,9 @@ trait BudParser extends StandardTokenParsers {
     })
   }
 
-
   /********** Statements **********/
+
+  def collectionRef = positioned(ident ^^ CollectionRef)
 
   def fieldRef = positioned((ident ~ "." ~ ident) ^^ {
     case collectionName ~ "." ~ field =>

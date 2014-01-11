@@ -6,6 +6,9 @@ import edu.berkeley.cs.boom.bloomscala.parser.FieldType.FieldType
 import edu.berkeley.cs.boom.bloomscala.parser.BloomOp.BloomOp
 import edu.berkeley.cs.boom.bloomscala.AnalysisInfo
 
+trait Pretty {
+  def pretty: String = toString
+}
 
 sealed trait DepAnalysis {
   /**
@@ -37,12 +40,10 @@ case class CollectionDeclaration(
 }
 
 /** Valid RHS's of statements */
-sealed trait StatementRHS extends DepAnalysis {
-  def pretty: String = toString
-}
+sealed trait StatementRHS extends DepAnalysis with Pretty
 
 /** Valid targets of the map ({|| []}) operation */
-sealed trait MappedCollectionTarget
+sealed trait MappedCollectionTarget extends Pretty
 
 /** Collections that are derived through operations like map and join */
 sealed trait DerivedCollection extends StatementRHS with MappedCollectionTarget
@@ -53,6 +54,7 @@ case class MappedCollection(collection: MappedCollectionTarget, shortNames: List
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
     colExprs.flatMap(_.getDependencies(analysisInfo)).toSet
   }
+  override def pretty: String = s"${collection.pretty} { ... }"
 }
 
 case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection with Positional {
@@ -61,10 +63,11 @@ case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection w
   }
 }
 
-case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Any) extends DerivedCollection {
+case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate) extends DerivedCollection {
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
     Set((analysisInfo.collections(a), false), (analysisInfo.collections(b), false))
   }
+  override def pretty: String = s"(${a.pretty} * ${b.pretty}) on (${predicate.pretty})"
 }
 
 case class CollectionRef(name: String) extends MappedCollectionTarget with Positional with StatementRHS {
@@ -72,13 +75,21 @@ case class CollectionRef(name: String) extends MappedCollectionTarget with Posit
 
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] =
     Set((analysisInfo.collections(this), false))
+
+  def collection(implicit analysisInfo: AnalysisInfo): CollectionDeclaration =
+    analysisInfo.collections(this)
+
 }
 case class Field(name: String, typ: FieldType) extends Positional
 
 // If `collectionName` is an alias, it's expanded during the typechecking phase.
 case class FieldRef(var collectionName: String, fieldName: String) extends ColExpr {
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
-    Set((analysisInfo.collections(collectionName)(this.pos), false))
+    Set((collection(analysisInfo), false))
+  }
+
+  def collection(implicit analysisInfo: AnalysisInfo): CollectionDeclaration = {
+    analysisInfo.collections(collectionName)(this.pos)
   }
 }
 
@@ -87,6 +98,7 @@ abstract class ColExpr extends Positional {
   var typ: Option[FieldType] = None
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)]
 }
+
 case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr {
   def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] =
     lhs.getDependencies(analysisInfo) ++ rhs.getDependencies(analysisInfo)
@@ -96,7 +108,11 @@ case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends
   def pretty: String = s"${lhs.pretty} ${BloomOp.opToSymbol(op)} ${rhs.pretty}"
 }
 
-case class EqualityPredicate[T](a: T, b: T) extends Positional
+trait Predicate extends Pretty
+
+case class EqualityPredicate[T](a: T, b: T) extends Predicate with Positional {
+  override def pretty: String = s"$a == $b"
+}
 
 object BloomOp extends Enumeration {
   type BloomOp = Value

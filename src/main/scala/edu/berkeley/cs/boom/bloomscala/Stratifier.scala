@@ -8,13 +8,14 @@ import scalax.collection.edge.LkDiEdge
 import scalax.collection.io.dot._
 import scala.Some
 import edu.berkeley.cs.boom.bloomscala.Stratifier.{StratifiedRules, StratifiedCollections}
+import scala.collection.mutable
 
 object Stratifier {
   type StratifiedCollections = Seq[Set[CollectionDeclaration]]
-  type StratifiedRules = Seq[Set[Statement]]
+  type StratifiedRules = Array[Set[Statement]]
 }
 
-class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
+class Stratifier(implicit analysisInfo: AnalysisInfo) extends Logging {
 
   /**
    * For simplicity, this is a multigraph.  To make it into a regular digraph,
@@ -62,6 +63,7 @@ class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
         graph.addLEdge(collection, lhs)(EdgeLabel(isNegated, isTemporal, stmt))(LkDiEdge)
       }
     }
+    logger.debug(s"Precedence Graph:\n$graphToDot")
   }
 
   /**
@@ -100,24 +102,36 @@ class Stratifier(analysisInfo: AnalysisInfo) extends Logging {
       calcStratum(node, reachableViaPathWithNegation = false, pathHasTemporalEdge = false, Seq(node))
     }
     // TODO: Again, it's confusing that the scalax.graph library needs all of these casts:
-    graph.nodes.groupBy(_.stratum).toSeq.sortBy(_._1).map(_._2.map(_.value.asInstanceOf[CollectionDeclaration]).toSet)
+    val strata = graph.nodes.groupBy(_.stratum).toSeq.sortBy(_._1).map(_._2.map(_.value.asInstanceOf[CollectionDeclaration]).toSet)
+    // Ensure that the nodes' stratums are 0-based and gapless:
+    strata.zipWithIndex.foreach { case (c, s) => c.foreach(_.stratum = s) }
+    strata
   }
 
   /**
    * Stratify rules according to the strata of their referenced collections.
    */
-  private def stratifyRules(strata: StratifiedCollections): StratifiedRules = {
-    // If the rule body doesn't reference any collections, it won't be
-    // assigned a stratum, so just place it in stratum zero.
-
-    // All temporal rules are placed in the last stratum.
-    null
+  private[bloomscala] def stratifyRules(strata: StratifiedCollections): StratifiedRules = {
+    logger.debug("Placing rules into strata")
+    val stratifiedRules = Array.fill(strata.size + 1)(mutable.Set.empty[Statement])
+    val rules = analysisInfo.parseResults.filter(_.isRight).map(_.right.get)
+    for (rule <- rules) {
+      val ruleStratum = if (rule.op == BloomOp.<=) {  // Deductive rule
+        rule.lhs.collection.stratum
+      } else {  // Temporal rule
+        strata.size  // Place in the last stratum
+      }
+      stratifiedRules(ruleStratum) += rule
+    }
+    logger.debug {
+      s"StratifiedRules:\n${stratifiedRules.map(_.map(_.pretty)).mkString("\n")}"
+    }
+    stratifiedRules.map(_.toSet)
   }
 
 
   def run() {
     buildPrecedenceGraph()
-    logger.debug(s"Precedence Graph:\n$graphToDot")
     val strata = stratifyCollections()
     val stratifiedRules = stratifyRules(strata)
   }

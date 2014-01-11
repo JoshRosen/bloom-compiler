@@ -8,9 +8,9 @@ object Compiler extends Logging {
   def compile(src: String) {
     try {
       val parseResults = BudParser.parseProgram(src)
-      val info = new AnalysisInfo(parseResults)
-      new Typer(info).run()
-      new Stratifier(info).run()
+      implicit val info = new AnalysisInfo(parseResults)
+      new Typer().run()
+      new Stratifier().run()
     } catch { case e: Exception =>
       logger.error(s"Compilation failed: ${e.getMessage}")
       throw e
