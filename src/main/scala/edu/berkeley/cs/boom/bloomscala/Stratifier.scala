@@ -1,7 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala
 
 import com.typesafe.scalalogging.slf4j.Logging
-import edu.berkeley.cs.boom.bloomscala.parser._
+import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import scalax.collection.{Graph => BaseGraph}
 import scalax.collection.mutable.Graph
 import scalax.collection.edge.LkDiEdge
@@ -15,7 +15,8 @@ object Stratifier {
   type StratifiedRules = Array[Set[Statement]]
 }
 
-class Stratifier(implicit analysisInfo: AnalysisInfo) extends Logging {
+class Stratifier extends Logging {
+  /*
 
   /**
    * For simplicity, this is a multigraph.  To make it into a regular digraph,
@@ -130,9 +131,12 @@ class Stratifier(implicit analysisInfo: AnalysisInfo) extends Logging {
   }
 
 
+  */
   def run() {
+    /*
     buildPrecedenceGraph()
     val strata = stratifyCollections()
     val stratifiedRules = stratifyRules(strata)
+    */
   }
 }

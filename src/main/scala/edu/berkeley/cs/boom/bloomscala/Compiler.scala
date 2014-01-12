@@ -1,19 +1,41 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import com.typesafe.scalalogging.slf4j.Logging
+import org.kiama.util.Messaging
+import edu.berkeley.cs.boom.bloomscala.parser.AST.{CollectionRef, Node}
+import org.kiama.attribution.Attributable
+import edu.berkeley.cs.boom.bloomscala.parser.BudParser
+import edu.berkeley.cs.boom.bloomscala.analysis.Namer
 
 
 object Compiler extends Logging {
   def compile(src: String) {
+    val messaging = new Messaging
+    val namer = new Namer(messaging)
+    import namer._
+
     try {
       val parseResults = BudParser.parseProgram(src)
-      implicit val info = new AnalysisInfo(parseResults)
-      new Typer().run()
-      new Stratifier().run()
+      // Force evaluation of the typechecking:
+      def check(node: Attributable) {
+        node match {
+          case cr: CollectionRef => cr->declaration
+          case _ =>
+        }
+        node.children.foreach(check)
+      }
+      check(parseResults)
     } catch { case e: Exception =>
       logger.error(s"Compilation failed: ${e.getMessage}")
       throw e
+    } finally {
+      messaging.report()
+      if (messaging.messagecount != 0) {
+        // TODO: this is fine for now for simple tests, but in the future
+        // `compile` should return more detailed information for consumption
+        // by unit tests
+        throw new CompilerException("Compilation had error messages")
+      }
     }
   }
 
@@ -32,11 +54,6 @@ object Compiler extends Logging {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-    try {
       compile(p)
-    } catch { case e: Exception =>
-      println(e.getMessage)
-      sys.exit(-1)
-    }
   }
 }

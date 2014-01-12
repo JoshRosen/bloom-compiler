@@ -1,147 +1,94 @@
 package edu.berkeley.cs.boom.bloomscala.parser
 
-import scala.util.parsing.input.Positional
-import edu.berkeley.cs.boom.bloomscala.parser.CollectionType.CollectionType
-import edu.berkeley.cs.boom.bloomscala.parser.FieldType.FieldType
-import edu.berkeley.cs.boom.bloomscala.parser.BloomOp.BloomOp
-import edu.berkeley.cs.boom.bloomscala.AnalysisInfo
+import org.kiama.attribution.Attributable
+import org.kiama.util.Positioned
+import edu.berkeley.cs.boom.bloomscala.parser.AST.BloomOp.BloomOp
+import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionType.CollectionType
+import edu.berkeley.cs.boom.bloomscala.parser.AST.FieldType.FieldType
+import scala.collection.GenTraversable
 
-trait Pretty {
-  def pretty: String = toString
-}
 
-sealed trait DepAnalysis {
-  /**
-   * Return the set of collections that this rule depends on, with each
-   * collection marked according to whether the dependency is negated.
-   */
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)]
-}
+object AST {
+  trait Node extends Attributable with Positioned
 
-case class CollectionDeclaration(
-    collectionType: CollectionType,
-    name: String,
-    keys: List[Field],
-    values: List[Field])
-  extends Positional {
-  /** Set by the Stratifier */
-  var stratum: Int = 0
-  /** Used by the Stratifier to track its graph traversal status */
-  var stratificationStatus = "init"
-  /**
-   * Modified by the Stratifier to record whether this node is reachable
-   * via a path in the precedence graph that contains a negated edge.
-   */
-  var reachableViaPathWithNegation = false
-  val schema: List[FieldType.FieldType] = (keys ++ values).map(_.typ)
-  def getField(name: String): Option[Field] = {
-    (keys ++ values).find(_.name == name)
-  }
-}
+  case class Program(nodes: GenTraversable[Node]) extends Node
 
-/** Valid RHS's of statements */
-sealed trait StatementRHS extends DepAnalysis with Pretty
+  case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends Node
 
-/** Valid targets of the map ({|| []}) operation */
-sealed trait MappedCollectionTarget extends Pretty
-
-/** Collections that are derived through operations like map and join */
-sealed trait DerivedCollection extends StatementRHS with MappedCollectionTarget
-
-case class MappedCollection(collection: MappedCollectionTarget, shortNames: List[String],
-                            colExprs: List[ColExpr]) extends DerivedCollection with Positional {
-  var schema: Option[List[FieldType]] = None
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
-    colExprs.flatMap(_.getDependencies(analysisInfo)).toSet
-  }
-  override def pretty: String = s"${collection.pretty} { ... }"
-}
-
-case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection with Positional {
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
-    Set((analysisInfo.collections(a), false), (analysisInfo.collections(b), true))
-  }
-}
-
-case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate) extends DerivedCollection {
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
-    Set((analysisInfo.collections(a), false), (analysisInfo.collections(b), false))
-  }
-  override def pretty: String = s"(${a.pretty} * ${b.pretty}) on (${predicate.pretty})"
-}
-
-case class CollectionRef(name: String) extends MappedCollectionTarget with Positional with StatementRHS {
-  override def pretty: String = name
-
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] =
-    Set((analysisInfo.collections(this), false))
-
-  def collection(implicit analysisInfo: AnalysisInfo): CollectionDeclaration =
-    analysisInfo.collections(this)
-
-}
-case class Field(name: String, typ: FieldType) extends Positional
-
-// If `collectionName` is an alias, it's expanded during the typechecking phase.
-case class FieldRef(var collectionName: String, fieldName: String) extends ColExpr {
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] = {
-    Set((collection(analysisInfo), false))
+  case class CollectionDeclaration(
+      collectionType: CollectionType,
+      name: String,
+      keys: List[Field],
+      values: List[Field])
+    extends Node {
+    /** Set by the Stratifier */
+    var stratum: Int = 0
+    /** Used by the Stratifier to track its graph traversal status */
+    var stratificationStatus = "init"
+    /**
+     * Modified by the Stratifier to record whether this node is reachable
+     * via a path in the precedence graph that contains a negated edge.
+     */
+    var reachableViaPathWithNegation = false
+    val schema: List[FieldType.FieldType] = (keys ++ values).map(_.typ)
+    def getField(name: String): Option[Field] = {
+      (keys ++ values).find(_.name == name)
+    }
   }
 
-  def collection(implicit analysisInfo: AnalysisInfo): CollectionDeclaration = {
-    analysisInfo.collections(collectionName)(this.pos)
+  class MissingDeclaration() extends CollectionDeclaration(CollectionType.Table, "$$UnknownCollection", List.empty, List.empty)
+
+  /** Valid RHS's of statements */
+  trait StatementRHS
+  /** Valid targets of the map ({|| []}) operation */
+  trait MappedCollectionTarget
+  /** Collections that are derived through operations like map and join */
+  trait DerivedCollection extends StatementRHS with MappedCollectionTarget with Node
+
+  case class MappedCollection(collection: MappedCollectionTarget, shortNames: List[String],
+                              colExprs: List[ColExpr]) extends DerivedCollection
+  case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
+  case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate)
+    extends DerivedCollection
+  case class CollectionRef(name: String) extends MappedCollectionTarget with StatementRHS with Node
+  case class Field(name: String, typ: FieldType) extends Node
+
+  trait ColExpr extends Node
+  case class FieldRef(collectionName: String, fieldName: String) extends ColExpr
+  case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
+
+  trait Predicate extends Node
+  case class EqualityPredicate[T](a: T, b: T) extends Predicate
+
+  object BloomOp extends Enumeration {
+    type BloomOp = Value
+    val InstantaneousMerge, DeferredMerge, AsynchronousMerge, Delete, DeferredUpdate = Value
+    val <= = InstantaneousMerge
+    val symbolToOp: Map[String, BloomOp] = Map(
+      "<=" -> InstantaneousMerge,
+      "<+" -> DeferredMerge,
+      "<~" -> AsynchronousMerge,
+      "<-" -> Delete,
+      "<+-" -> DeferredUpdate
+    )
+    val opToSymbol = symbolToOp.map(_.swap)
   }
-}
 
-abstract class ColExpr extends Positional {
-  /** Set during typechecking */
-  var typ: Option[FieldType] = None
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)]
-}
+  object CollectionType extends Enumeration {
+    type CollectionType = Value
+    val Table, Scratch = Value
+    val nameToType: Map[String, CollectionType] = Map(
+      "table" -> Table,
+      "scratch" -> Scratch
+    )
+  }
 
-case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr {
-  def getDependencies(analysisInfo: AnalysisInfo): Set[(CollectionDeclaration, Boolean)] =
-    lhs.getDependencies(analysisInfo) ++ rhs.getDependencies(analysisInfo)
-}
-
-case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends Positional {
-  def pretty: String = s"${lhs.pretty} ${BloomOp.opToSymbol(op)} ${rhs.pretty}"
-}
-
-trait Predicate extends Pretty
-
-case class EqualityPredicate[T](a: T, b: T) extends Predicate with Positional {
-  override def pretty: String = s"$a == $b"
-}
-
-object BloomOp extends Enumeration {
-  type BloomOp = Value
-  val InstantaneousMerge, DeferredMerge, AsynchronousMerge, Delete, DeferredUpdate = Value
-  val <= = InstantaneousMerge
-  val symbolToOp: Map[String, BloomOp] = Map(
-    "<=" -> InstantaneousMerge,
-    "<+" -> DeferredMerge,
-    "<~" -> AsynchronousMerge,
-    "<-" -> Delete,
-    "<+-" -> DeferredUpdate
-  )
-  val opToSymbol = symbolToOp.map(_.swap)
-}
-
-object CollectionType extends Enumeration {
-  type CollectionType = Value
-  val Table, Scratch = Value
-  val nameToType: Map[String, CollectionType] = Map(
-    "table" -> Table,
-    "scratch" -> Scratch
-  )
-}
-
-object FieldType extends Enumeration {
-  type FieldType = Value
-  val BloomInt, BloomString = Value
-  val nameToType: Map[String, FieldType] = Map(
-    "int" -> BloomInt,
-    "string" -> BloomString
-  )
+  object FieldType extends Enumeration {
+    type FieldType = Value
+    val BloomInt, BloomString = Value
+    val nameToType: Map[String, FieldType] = Map(
+      "int" -> BloomInt,
+      "string" -> BloomString
+    )
+  }
 }
