@@ -9,7 +9,7 @@ class Namer(val messaging: Messaging) {
 
   import messaging.message
 
-  lazy val declaration: CollectionRef => CollectionDeclaration =
+  def collectionDeclaration: CollectionRef => CollectionDeclaration =
     attr {
       case cr @ CollectionRef(name) => cr->lookup(name) match {
         case md: MissingDeclaration =>
@@ -17,6 +17,16 @@ class Namer(val messaging: Messaging) {
           md
         case cd => cd
       }
+    }
+
+  def fieldDeclaration: FieldRef => Field =
+    attr {
+      case fr @ FieldRef(collectionRef, fieldName) =>
+        val collection = collectionDeclaration(collectionRef)
+        collection.getField(fieldName).getOrElse {
+          message(fr, s"Collection ${collection.name} does not have field $fieldName")
+          new UnknownField
+        }
     }
 
   lazy val shortNameBindings: MappedCollectionTarget => Seq[CollectionRef] =
@@ -35,7 +45,7 @@ class Namer(val messaging: Messaging) {
                         s"but got ${shortNames.size}")
           }
           val bindings = shortNames.zip(shortNameTargets).toMap
-          bindings.get(name).map(_->lookup(name)).getOrElse(mc.parent->lookup(name))
+          bindings.get(name).map(_->collectionDeclaration).getOrElse(mc.parent->lookup(name))
         case Program(nodes) =>
           val declarations = nodes.filter(_.isInstanceOf[CollectionDeclaration])
             .map(_.asInstanceOf[CollectionDeclaration])

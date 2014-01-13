@@ -52,9 +52,10 @@ object AST {
     extends DerivedCollection
   case class CollectionRef(name: String) extends MappedCollectionTarget with StatementRHS with Node
   case class Field(name: String, typ: FieldType) extends Node
+  class UnknownField extends Field("$$unknownField", FieldType.UnknownFieldType)
 
   trait ColExpr extends Node
-  case class FieldRef(collectionName: String, fieldName: String) extends ColExpr
+  case class FieldRef(collection: CollectionRef, fieldName: String) extends ColExpr
   case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
 
   trait Predicate extends Node
@@ -85,7 +86,7 @@ object AST {
 
   object FieldType extends Enumeration {
     type FieldType = Value
-    val BloomInt, BloomString = Value
+    val BloomInt, BloomString, UnknownFieldType = Value
     val nameToType: Map[String, FieldType] = Map(
       "int" -> BloomInt,
       "string" -> BloomString

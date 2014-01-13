@@ -2,24 +2,31 @@ package edu.berkeley.cs.boom.bloomscala
 
 import com.typesafe.scalalogging.slf4j.Logging
 import org.kiama.util.Messaging
-import edu.berkeley.cs.boom.bloomscala.parser.AST.{CollectionRef, Node}
+import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attributable
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
-import edu.berkeley.cs.boom.bloomscala.analysis.Namer
+import edu.berkeley.cs.boom.bloomscala.analysis.{Typer, Namer}
 
 
 object Compiler extends Logging {
   def compile(src: String) {
     val messaging = new Messaging
     val namer = new Namer(messaging)
+    val typer = new Typer(messaging, namer)
     import namer._
+    import typer._
 
     try {
       val parseResults = BudParser.parseProgram(src)
       // Force evaluation of the typechecking:
+      // TODO: the definition of a program being well-typed
+      // should be an attribute at the root of the tree that's
+      // defined recursively over the program's statements
+      // and subtrees
       def check(node: Attributable) {
         node match {
-          case cr: CollectionRef => cr->declaration
+          case cr: CollectionRef => cr->collectionDeclaration
+          case s: Statement => s->isWellTyped
           case _ =>
         }
         node.children.foreach(check)

@@ -38,9 +38,9 @@ trait BudParser extends PositionedParserUtilities {
 
   lazy val collectionRef = ident ^^ CollectionRef
 
-  lazy val fieldRef = (ident ~ "." ~ ident) ^^ {
-    case collectionName ~ "." ~ field =>
-      FieldRef(collectionName, field)
+  lazy val fieldRef = (collectionRef ~ "." ~ ident) ^^ {
+    case collection ~ "." ~ field =>
+      FieldRef(collection, field)
   }
 
   lazy val colTerm = fieldRef
