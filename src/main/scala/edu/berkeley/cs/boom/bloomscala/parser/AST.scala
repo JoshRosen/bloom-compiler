@@ -11,7 +11,12 @@ import scala.collection.GenTraversable
 object AST {
   trait Node extends Attributable with Positioned
 
-  case class Program(nodes: GenTraversable[Node]) extends Node
+  case class Program(nodes: GenTraversable[Node]) extends Node {
+    val declarations: GenTraversable[CollectionDeclaration] =
+      nodes.filter(_.isInstanceOf[CollectionDeclaration]).map(_.asInstanceOf[CollectionDeclaration])
+    val statements: GenTraversable[Statement] =
+      nodes.filter(_.isInstanceOf[Statement]).map(_.asInstanceOf[Statement])
+  }
 
   case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends Node
 
@@ -39,7 +44,7 @@ object AST {
   class MissingDeclaration() extends CollectionDeclaration(CollectionType.Table, "$$UnknownCollection", List.empty, List.empty)
 
   /** Valid RHS's of statements */
-  trait StatementRHS
+  trait StatementRHS extends Node
   /** Valid targets of the map ({|| []}) operation */
   trait MappedCollectionTarget
   /** Collections that are derived through operations like map and join */

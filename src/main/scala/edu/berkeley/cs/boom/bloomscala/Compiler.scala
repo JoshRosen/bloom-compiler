@@ -5,17 +5,22 @@ import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attributable
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
-import edu.berkeley.cs.boom.bloomscala.analysis.{Typer, Namer}
+import edu.berkeley.cs.boom.bloomscala.analysis._
 
 
 object Compiler extends Logging {
-  def compile(src: String) {
-    val messaging = new Messaging
-    val namer = new Namer(messaging)
-    val typer = new Typer(messaging, namer)
-    import namer._
-    import typer._
 
+  val messaging = new Messaging
+  val namer = new Namer(messaging)
+  val typer = new Typer(messaging, namer)
+  val depAnalyzer = new DepAnalayzer(messaging, namer)
+  val stratifier = new Stratifier(messaging, depAnalyzer)
+  import namer._
+  import typer._
+  import stratifier._
+
+  def compile(src: String): Program = {
+    messaging.resetmessages()
     try {
       val parseResults = BudParser.parseProgram(src)
       // Force evaluation of the typechecking:
@@ -32,6 +37,7 @@ object Compiler extends Logging {
         node.children.foreach(check)
       }
       check(parseResults)
+      parseResults
     } catch { case e: Exception =>
       logger.error(s"Compilation failed: ${e.getMessage}")
       throw e

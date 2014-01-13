@@ -5,7 +5,7 @@ import org.kiama.attribution.Attribution._
 import org.kiama.util.Messaging
 import org.kiama.attribution.Attributable
 
-class Namer(val messaging: Messaging) {
+class Namer(messaging: Messaging) {
 
   import messaging.message
 
@@ -46,10 +46,8 @@ class Namer(val messaging: Messaging) {
           }
           val bindings = shortNames.zip(shortNameTargets).toMap
           bindings.get(name).map(_->collectionDeclaration).getOrElse(mc.parent->lookup(name))
-        case Program(nodes) =>
-          val declarations = nodes.filter(_.isInstanceOf[CollectionDeclaration])
-            .map(_.asInstanceOf[CollectionDeclaration])
-          val decl = declarations.find(_.name == name)
+        case program: Program =>
+          val decl = program.declarations.find(_.name == name)
           decl.getOrElse(new MissingDeclaration())
         case n => n.parent->lookup(name)
       }

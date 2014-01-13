@@ -5,23 +5,14 @@ import com.typesafe.scalalogging.slf4j.Logging
 
 
 class StratifierSuite extends FunSuite with Logging {
-  /*
-  def stratify(program: String): StratifiedCollections = {
-    val parseResults = BudParser.parseProgram(program)
-    implicit val info = new AnalysisInfo(parseResults)
-    new Typer().run()
-    try {
-      val stratifier = new Stratifier()
-      stratifier.buildPrecedenceGraph()
-      val strata = stratifier.stratifyCollections()
-      stratifier.stratifyRules(strata)
-      strata
-    } catch { case e: Exception =>
-      logger.error(e.getMessage)
-      throw e
-    }
+
+  def isStratifiable(source: String) = {
+    import Compiler.stratifier._
+    val program = Compiler.compile(source)
+    program->isTemporallyStratifiable
   }
 
+  /*
   test("Positive programs should have only one stratum") {
     val strata = stratify(
       """
@@ -34,27 +25,25 @@ class StratifierSuite extends FunSuite with Logging {
       """.stripMargin)
       assert(strata.length === 1)
     }
+    */
 
   test("Cycles with temporal negation should still be stratifiable") {
-    stratify(
+    assert(isStratifiable(
       """
         |       table a, [val: int]
         |       table b, [val: int]
         |       a <+ b.notin(a)
         |       b <+ a.notin(b)
-      """.stripMargin)
+      """.stripMargin))
   }
 
   test("Cycles with immediate negation should be unstratifiable") {
-    intercept[StratificationError] {
-      stratify(
+    assert(!isStratifiable(
         """
           |       table a, [val: int]
           |       table b, [val: int]
           |       b <= a.notin(b)
           |       a <= b.notin(a)
-        """.stripMargin)
-     }
+        """.stripMargin))
   }
-  */
 }

@@ -28,7 +28,8 @@ object BloomScalaBuild extends Build {
         "com.github.nikita-volkov" % "sext" % "0.2.3",
         "com.quantifind" %% "sumac" % "0.2.3",
         "com.googlecode.kiama" % "kiama_2.10" % "1.5.2"
-      )
+      ),
+     parallelExecution in Test := false
     )
   )
 }

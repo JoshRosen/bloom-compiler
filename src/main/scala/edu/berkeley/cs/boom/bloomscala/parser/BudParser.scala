@@ -2,7 +2,6 @@ package edu.berkeley.cs.boom.bloomscala.parser
 
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.util.PositionedParserUtilities
-import scala.util.matching.Regex
 import org.kiama.attribution.Attribution
 
 trait BudParser extends PositionedParserUtilities {
