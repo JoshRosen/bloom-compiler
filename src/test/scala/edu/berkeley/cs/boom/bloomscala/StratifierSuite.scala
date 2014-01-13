@@ -46,4 +46,14 @@ class StratifierSuite extends FunSuite with Logging {
           |       a <= b.notin(a)
         """.stripMargin))
   }
+
+  test("Positive cycles should be stratifiable") {
+    assert(isStratifiable(
+      """
+        |       table a, [val: int]
+        |       table b, [val: int]
+        |       b <= a
+        |       a <= b
+      """.stripMargin))
+  }
 }

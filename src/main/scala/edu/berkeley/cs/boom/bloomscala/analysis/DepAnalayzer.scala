@@ -42,10 +42,10 @@ class DepAnalayzer(messaging: Messaging, namer: Namer) {
       case a: Attributable => a.children.flatMap(annotatedDependencies).toTraversable
     }
 
-  lazy val participatesInCycle: Statement => Boolean =
+  lazy val participatesInNonTemporalCycle: Statement => Boolean =
     circular(true) { case stmt =>
       val deps: GenTraversable[Dependency] = stmt->statementDependencies
       val nextHops = deps.filterNot(_.isTemporal)
-      nextHops.map(d => participatesInCycle(d.stmt)).foldLeft(false)(_||_)
+      nextHops.map(d => participatesInNonTemporalCycle(d.stmt)).foldLeft(false)(_||_)
     }
 }

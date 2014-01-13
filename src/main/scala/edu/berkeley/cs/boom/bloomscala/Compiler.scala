@@ -14,7 +14,7 @@ object Compiler extends Logging {
   val namer = new Namer(messaging)
   val typer = new Typer(messaging, namer)
   val depAnalyzer = new DepAnalayzer(messaging, namer)
-  val stratifier = new Stratifier(messaging, depAnalyzer)
+  val stratifier = new Stratifier(messaging, namer, depAnalyzer)
   import namer._
   import typer._
   import stratifier._

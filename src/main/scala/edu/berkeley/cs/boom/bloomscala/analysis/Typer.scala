@@ -29,6 +29,8 @@ class Typer(val messaging: Messaging, namer: Namer) {
     attr {
       case mc @ MappedCollection(collection, shortNames, colExprs) =>
         colExprs.map(_->typ)
+      case cr: CollectionRef =>
+        (cr->collectionDeclaration).schema
       case notin @ NotIn(a, b) =>
         val aSchema = (a->collectionDeclaration).schema
         val bSchema = (b->collectionDeclaration).schema
