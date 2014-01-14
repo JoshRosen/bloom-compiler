@@ -9,7 +9,7 @@ class Namer(messaging: Messaging) {
 
   import messaging.message
 
-  def collectionDeclaration: CollectionRef => CollectionDeclaration =
+  implicit def collectionDeclaration: CollectionRef => CollectionDeclaration =
     attr {
       case cr @ CollectionRef(name) => cr->lookup(name) match {
         case md: MissingDeclaration =>
@@ -19,11 +19,11 @@ class Namer(messaging: Messaging) {
       }
     }
 
-  def fieldDeclaration: FieldRef => Field =
+  implicit def fieldDeclaration: FieldRef => Field =
     attr {
       case fr @ FieldRef(collectionRef, fieldName) =>
         val collection = collectionDeclaration(collectionRef)
-        collection.getField(fieldName).getOrElse {
+        collectionRef.getField(fieldName).getOrElse {
           message(fr, s"Collection ${collection.name} does not have field $fieldName")
           new UnknownField
         }

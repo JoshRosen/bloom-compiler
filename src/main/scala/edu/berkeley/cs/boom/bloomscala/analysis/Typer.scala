@@ -21,8 +21,8 @@ class Typer(val messaging: Messaging, namer: Namer) {
         expectType(a, BloomInt)
         expectType(b, BloomInt)
         BloomInt
-      case fieldRef: FieldRef =>
-        (fieldRef->fieldDeclaration).typ
+      case field: FieldRef =>
+        field.typ
     }
 
   lazy val rhsSchema: StatementRHS => List[FieldType] =
@@ -30,19 +30,17 @@ class Typer(val messaging: Messaging, namer: Namer) {
       case mc @ MappedCollection(collection, shortNames, colExprs) =>
         colExprs.map(_->typ)
       case cr: CollectionRef =>
-        (cr->collectionDeclaration).schema
+        cr.schema
       case notin @ NotIn(a, b) =>
-        val aSchema = (a->collectionDeclaration).schema
-        val bSchema = (b->collectionDeclaration).schema
-        if (aSchema != bSchema)
-          message(notin, s"notin called with incompatible schemas:\n$aSchema\n$bSchema")
-        aSchema
+        if (a.schema != b.schema)
+          message(notin, s"notin called with incompatible schemas:\n${a.schema}\n${b.schema}")
+        a.schema
     }
 
   lazy val isWellTyped: Statement => Boolean =
     attr {
       case stmt @ Statement(lhs, op, rhs) =>
-        val lSchema = (lhs->collectionDeclaration).schema
+        val lSchema = lhs.schema
         val rSchema = rhsSchema(rhs)
         if (rSchema != lSchema) {
           message(stmt, s"RHS has wrong schema; expected $lSchema but got $rSchema")

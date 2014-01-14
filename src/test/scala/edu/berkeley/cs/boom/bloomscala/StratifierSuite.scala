@@ -4,6 +4,7 @@ import org.scalatest.FunSuite
 import com.typesafe.scalalogging.slf4j.Logging
 import edu.berkeley.cs.boom.bloomscala.parser.AST.Program
 import scala.collection.{GenSeq, GenMap}
+import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
 
 
 class StratifierSuite extends FunSuite with Logging {
@@ -15,11 +16,11 @@ class StratifierSuite extends FunSuite with Logging {
     program->isTemporallyStratifiable
   }
 
-  def getCollectionStrata(program: Program): GenMap[String, Int] = {
+  def getCollectionStrata(program: Program): GenMap[String, Stratum] = {
     program.declarations.map(d => (d.name, collectionStratum(d))).toMap
   }
 
-  def getRuleStrata(program: Program): GenSeq[Int] = {
+  def getRuleStrata(program: Program): GenSeq[Stratum] = {
     program.statements.map(ruleStratum).toSeq
   }
 
@@ -49,10 +50,10 @@ class StratifierSuite extends FunSuite with Logging {
     )
     assert(program->isTemporallyStratifiable)
     val strata = getCollectionStrata(program)
-    assert(strata("a") === 0)
-    assert(strata("b") === 0)
-    assert(strata("c") === 1)
-    assert(getRuleStrata(program).head === 1)
+    assert(strata("a") === Stratum(0))
+    assert(strata("b") === Stratum(0))
+    assert(strata("c") === Stratum(1))
+    assert(getRuleStrata(program).head === Stratum(1))
   }
 
   test("Cycles with temporal negation should still be stratifiable") {

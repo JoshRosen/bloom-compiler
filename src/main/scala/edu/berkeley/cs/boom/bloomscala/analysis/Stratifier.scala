@@ -4,6 +4,15 @@ import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attribution._
 import org.kiama.util.Messaging
 
+object Stratum {
+  val lastStratum = Stratum(Int.MaxValue)
+}
+
+case class Stratum(underlying: Int) extends AnyVal with Ordered[Stratum] {
+  def +(delta: Int): Stratum = new Stratum(underlying + delta)
+  def compare(that: Stratum): Int = underlying - that.underlying
+}
+
 class Stratifier(messaging: Messaging, namer: Namer, depAnalyzer: DepAnalayzer) {
 
   import depAnalyzer._
@@ -20,23 +29,23 @@ class Stratifier(messaging: Messaging, namer: Namer, depAnalyzer: DepAnalayzer) 
       }
     }
 
-  lazy val ruleStratum: Statement => Int =
-    circular(0) {
+  lazy val ruleStratum: Statement => Stratum =
+    circular(Stratum(0)) {
       case Statement(lhs, op, rhs) =>
         if (op == BloomOp.<=) {  // deductive rule
-          (lhs->collectionDeclaration)->collectionStratum
+          lhs->collectionStratum
         } else {  // temporal rule
-          -1  // Place in the last stratum
+          Stratum.lastStratum
         }
     }
 
-  lazy val collectionStratum: CollectionDeclaration => Int =
-    circular(0) { collection =>
+  lazy val collectionStratum: CollectionDeclaration => Stratum =
+    circular(Stratum(0)) { collection =>
       val stmts = collection->collectionStatements
       val nonTemporalDeps = stmts.flatMap(statementDependencies).filterNot(_.isTemporal)
       val depStrata = nonTemporalDeps.map { case Dependency(col, isNegated, _, _) =>
         collectionStratum(col) +  (if (isNegated) 1 else 0)
       }
-      (depStrata ++ Set(0)).max
+      (depStrata ++ Set(Stratum(0))).max
     }
 }
