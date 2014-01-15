@@ -5,16 +5,15 @@ import org.kiama.util.Positioned
 import edu.berkeley.cs.boom.bloomscala.parser.AST.BloomOp.BloomOp
 import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionType.CollectionType
 import edu.berkeley.cs.boom.bloomscala.parser.AST.FieldType.FieldType
-import scala.collection.GenTraversable
 
 
 object AST {
   trait Node extends Attributable with Positioned
 
-  case class Program(nodes: GenTraversable[Node]) extends Node {
-    val declarations: GenTraversable[CollectionDeclaration] =
+  case class Program(nodes: Traversable[Node]) extends Node {
+    val declarations: Traversable[CollectionDeclaration] =
       nodes.filter(_.isInstanceOf[CollectionDeclaration]).map(_.asInstanceOf[CollectionDeclaration])
-    val statements: GenTraversable[Statement] =
+    val statements: Traversable[Statement] =
       nodes.filter(_.isInstanceOf[Statement]).map(_.asInstanceOf[Statement])
   }
 

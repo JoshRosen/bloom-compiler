@@ -25,12 +25,12 @@ class Stratifier(messaging: Messaging, namer: Namer, depAnalyzer: DepAnalayzer) 
   lazy val isTemporallyStratifiable: Program => Boolean =
     attr { program =>
       !program.statements.exists { stmt =>
-        participatesInNonTemporalCycle(stmt) && statementDependencies(stmt).exists(_.isNegated)
+        participatesInDeductiveCycle(stmt) && statementDependencies(stmt).exists(_.isNegated)
       }
     }
 
   lazy val ruleStratum: Statement => Stratum =
-    circular(Stratum(0)) {
+    attr {
       case Statement(lhs, op, rhs) =>
         if (op == BloomOp.<=) {  // deductive rule
           lhs->collectionStratum
