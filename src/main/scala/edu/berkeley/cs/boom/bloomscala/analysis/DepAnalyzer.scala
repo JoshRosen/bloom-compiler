@@ -10,7 +10,7 @@ case class Dependency(dependency: CollectionDeclaration,
                       isTemporal: Boolean,
                       stmt: Statement)
 
-class DepAnalayzer(messaging: Messaging, namer: Namer) {
+class DepAnalyzer(messaging: Messaging, namer: Namer) {
 
   import namer._
 
