@@ -29,6 +29,9 @@ object AST {
     def getField(name: String): Option[Field] = {
       (keys ++ values).find(_.name == name)
     }
+    def indexOfField(name: String): Int = {
+      (keys ++ values).indexOf(getField(name).get)
+    }
   }
 
   class MissingDeclaration() extends CollectionDeclaration(CollectionType.Table, "$$UnknownCollection", List.empty, List.empty)
@@ -36,7 +39,7 @@ object AST {
   /** Valid RHS's of statements */
   trait StatementRHS extends Node
   /** Valid targets of the map ({|| []}) operation */
-  trait MappedCollectionTarget
+  trait MappedCollectionTarget extends Node
   /** Collections that are derived through operations like map and join */
   trait DerivedCollection extends StatementRHS with MappedCollectionTarget with Node
 
@@ -54,7 +57,7 @@ object AST {
   case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
 
   trait Predicate extends Node
-  case class EqualityPredicate[T](a: T, b: T) extends Predicate
+  case class EqualityPredicate(a: ColExpr, b: ColExpr) extends Predicate
 
   object BloomOp extends Enumeration {
     type BloomOp = Value

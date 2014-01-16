@@ -38,6 +38,7 @@ class Namer(messaging: Messaging) {
   lazy val lookup: String => Attributable => CollectionDeclaration =
     paramAttr {
       name => {
+        // TODO: When inside of mappedCollection, we should ONLY allow reference to the short names
         case mc @ MappedCollection(target, shortNames, _) =>
           val shortNameTargets: Seq[CollectionRef] = shortNameBindings(target)
           if (shortNameTargets.size != shortNames.size) {

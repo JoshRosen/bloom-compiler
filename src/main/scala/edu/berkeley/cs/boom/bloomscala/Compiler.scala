@@ -6,6 +6,7 @@ import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attributable
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import edu.berkeley.cs.boom.bloomscala.analysis._
+import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
 
 
 object Compiler extends Logging {
@@ -67,6 +68,6 @@ object Compiler extends Logging {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-      compile(p)
+      RxJsCodeGenerator.generateCode(compile(p))
   }
 }
