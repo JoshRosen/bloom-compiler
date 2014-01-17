@@ -27,8 +27,10 @@ class Typer(val messaging: Messaging, namer: Namer) {
 
   lazy val rhsSchema: StatementRHS => List[FieldType] =
     attr {
-      case mc @ MappedCollection(collection, shortNames, colExprs) =>
-        colExprs.map(_->typ)
+      case mc: MappedCollection =>
+        mc.colExprs.map(_->typ)
+      case mej: MappedEquijoin =>
+        mej.colExprs.map(_->typ)
       case cr: CollectionRef =>
         cr.schema
       case notin @ NotIn(a, b) =>

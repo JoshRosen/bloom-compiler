@@ -3,6 +3,7 @@ package edu.berkeley.cs.boom.bloomscala.parser
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.util.PositionedParserUtilities
 import org.kiama.attribution.Attribution
+import edu.berkeley.cs.boom.bloomscala.rewriting.InitialRewrites
 
 trait BudParser extends PositionedParserUtilities {
 
@@ -83,7 +84,13 @@ trait BudParser extends PositionedParserUtilities {
 object BudParser extends BudParser {
   def parseProgram(str: String): Program = {
     val p = parseAll(program, str).get
-    Attribution.initTree(p)
-    p
+    // When I tried to apply these rewrites after initializing the tree, it appears
+    // that the new tree could contain references to the root of the old tree via
+    // `parent` pointers, which could cause certain traversal paths to not see
+    // the effects of the rewrite.
+    // TODO: is this a bug in Kiama or misuse on my part?
+    val rewritten = InitialRewrites(p)
+    Attribution.initTree(rewritten)
+    rewritten
   }
 }

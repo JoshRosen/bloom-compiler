@@ -23,6 +23,15 @@ class DepAnalyzer(messaging: Messaging, namer: Namer) {
     }
 
   /**
+   * The collections referenced in this subtree.
+   */
+  lazy val referencedCollections: Attributable => Set[CollectionDeclaration] =
+    attr {
+      case cr: CollectionRef => Set(collectionDeclaration(cr))
+      case n: Node => n.children.map(referencedCollections).foldLeft(Set.empty[CollectionDeclaration])(_.union(_))
+    }
+
+  /**
    * A annotated list of the collections that this statement's RHS depends on.
    */
   lazy val statementDependencies: Statement => Traversable[Dependency] =

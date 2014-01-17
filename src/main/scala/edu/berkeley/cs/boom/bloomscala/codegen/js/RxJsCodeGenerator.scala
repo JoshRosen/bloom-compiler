@@ -3,29 +3,18 @@ package edu.berkeley.cs.boom.bloomscala.codegen.js
 import edu.berkeley.cs.boom.bloomscala.Compiler
 import Compiler.stratifier._
 import Compiler.namer._
+import Compiler.depAnalyzer._
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 
 import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionDeclaration
 import edu.berkeley.cs.boom.bloomscala.parser.AST.Program
-import org.kiama.rewriting.Rewriter._
 import scala.collection.immutable
 
 
+// TODO: the logic for generating delta rules should be performed
+// in a target-language agnostic manner in its own module.
 object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
-  type NameResolver = Map[CollectionDeclaration, String]
-
-  // Helper functions for performing rewriting prior to code generation:
-  case class MappedJoin(a: CollectionRef,
-                        b: CollectionRef,
-                        predicate: Predicate,
-                        shortNames: List[String],
-                        colExprs: List[ColExpr]) extends DerivedCollection
-
-  val joinMapConsolidation =
-    rule {
-      case MappedCollection(JoinedCollection(a, b, predicate), shortNames, colExprs) =>
-        MappedJoin(a, b, predicate, shortNames, colExprs)
-    }
+  type NameResolver = Function[CollectionDeclaration, String]
 
 
   def gen(nameResolver: NameResolver)(node: Node): Doc =
@@ -40,7 +29,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       case PlusStatement(a, b) =>
         gen(nameResolver)(a) <+> plus <+> gen(nameResolver)(b)
 
-      case mc @ MappedJoin(a, b, EqualityPredicate(aExpr, bExpr), shortNames, colExprs) =>
+      case MappedEquijoin(a, b, aExpr, bExpr, shortNames, colExprs) =>
         val newNameResolver: NameResolver = Map(
           collectionDeclaration(a) -> shortNames(0),
           collectionDeclaration(b) -> shortNames(1)
@@ -61,19 +50,46 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
         ))
     }
 
-  def generateCode(program: Program) {
-    val rewrittenProgram: Program = rewrite(outermost(joinMapConsolidation))(program)
-    val stratifiedRules = rewrittenProgram.statements.groupBy(ruleStratum).toSeq.sortBy(x => x._1)
-    for ((stratumNumber, rules) <- stratifiedRules) {
-      val rulesByCollection = rules.groupBy(x => collectionDeclaration(x.lhs))
-      for ((collection, rules) <- rulesByCollection) {
-        val nameResolver = rewrittenProgram.declarations.map(x => (x, s"${x.name}Delta")).toMap
-        val deltaComponents = for ((rule, index) <- rules.toSeq.zipWithIndex) yield {
-          "var" <+> s"${collection.name}Delta$index" <+> equal <+> gen(nameResolver)(rule.rhs) <> semi
+  def generateSemiNaiveStepFunctionBody(collection: CollectionDeclaration): Doc = {
+    val rules = collectionStatements(collection)
+    if (rules.isEmpty) return empty
+
+    // TODO: Kiama's functions like vcat only accept immutable seqs, whereas the interface
+    // seems like it would be cleaner if they accepted the generic collection.Seq interface.
+    val inputs = immutable.Seq(rules.flatMap(referencedCollections).toSeq:_*)
+    val newUpdates = for (deltaCollection <- inputs) yield {
+      def nameResolver(cDecl: CollectionDeclaration) = {
+        if (cDecl == deltaCollection) {
+          s"${cDecl.name}DeltaIn"
+        } else {
+          cDecl.name
         }
-        val delta = (1 to deltaComponents.size).map(index => text(s"${collection.name}Delta$index")).reduce(_ <> dot <> "union" <> parens(_))
-        val deltaBlock = deltaComponents.reduce(_ <> linebreak <> _) <> linebreak <> s"var ${collection.name}Delta" <+> equal <+> delta
-        println(super.pretty(deltaBlock))
+      }
+      val rulesNeedingDelta = rules.filter(r => referencedCollections(r.rhs).contains(deltaCollection))
+      for ((rule, index) <- rulesNeedingDelta.toSeq.zipWithIndex) yield {
+        val variableName = s"${collection.name}NewGiven${deltaCollection.name}Delta$index"
+        (variableName, "var" <+> variableName <+> equal <+> gen(nameResolver)(rule.rhs) <> semi)
+      }
+    }
+    val allNewNames = newUpdates.flatten.map(_._1).map(text)
+    val newUpdateStatements = newUpdates.flatten.map(_._2)
+    val netNew = s"var ${collection.name}New" <+> equal <+> allNewNames.reduceLeft(_ <> dot <> "union" <> parens(_))
+    val delta = s"var ${collection.name}Delta" <+> equal <+> netNew <+> minus <+> collection.name
+
+    vcat(newUpdateStatements) <> linebreak <> netNew <> linebreak <> delta
+    //var allDeltaUpdateRules = deltaUpdates.reduce(_ <> linebreak <> linebreak <> _)
+
+    //allDeltaUpdateRules =
+    //<> linebreak <> s"var ${collection.name}New" <+> equal <+> delta
+    //<> linebreak <> s"var ${collection.name}Delta = ${collection.name}New - ${collection.name};")
+  }
+
+  def generateCode(program: Program) {
+    // TODO: eventually, this needs to take temporal rules into account.
+    val stratifiedCollections = program.declarations.groupBy(collectionStratum).toSeq.sortBy(x => x._1)
+    for ((stratumNumber, collections) <- stratifiedCollections) {
+      for (collection <- collections) {
+        println(super.pretty(generateSemiNaiveStepFunctionBody(collection)))
       }
     }
   }

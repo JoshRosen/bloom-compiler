@@ -11,9 +11,9 @@ object AST {
   trait Node extends Attributable with Positioned
 
   case class Program(nodes: Traversable[Node]) extends Node {
-    val declarations: Traversable[CollectionDeclaration] =
+    lazy val declarations: Traversable[CollectionDeclaration] =
       nodes.filter(_.isInstanceOf[CollectionDeclaration]).map(_.asInstanceOf[CollectionDeclaration])
-    val statements: Traversable[Statement] =
+    lazy val statements: Traversable[Statement] =
       nodes.filter(_.isInstanceOf[Statement]).map(_.asInstanceOf[Statement])
   }
 
@@ -48,6 +48,12 @@ object AST {
   case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
   case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate)
     extends DerivedCollection
+  case class MappedEquijoin(a: CollectionRef,
+                            b: CollectionRef,
+                            aExpr: ColExpr,
+                            bExpr: ColExpr,
+                            shortNames: List[String],
+                            colExprs: List[ColExpr]) extends DerivedCollection
   case class CollectionRef(name: String) extends MappedCollectionTarget with StatementRHS with Node
   case class Field(name: String, typ: FieldType) extends Node
   class UnknownField extends Field("$$unknownField", FieldType.UnknownFieldType)

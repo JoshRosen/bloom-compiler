@@ -31,6 +31,7 @@ class Namer(messaging: Messaging) {
 
   lazy val shortNameBindings: MappedCollectionTarget => Seq[CollectionRef] =
     attr {
+      case MappedEquijoin(a, b, _, _, _, _) => Seq(a, b)
       case JoinedCollection(a, b, _) => Seq(a, b)
       case cr: CollectionRef => Seq(cr)
     }
@@ -38,7 +39,14 @@ class Namer(messaging: Messaging) {
   lazy val lookup: String => Attributable => CollectionDeclaration =
     paramAttr {
       name => {
-        // TODO: When inside of mappedCollection, we should ONLY allow reference to the short names
+        // TODO: When inside of mappedCollection body, we should ONLY allow reference to the short names
+        case mej @ MappedEquijoin(a, b, _, _, shortNames, _) =>
+          if (shortNames.size != 2) {
+            message(mej, s"Wrong number of short names; expected 2 " +
+              s"but got ${shortNames.size}")
+          }
+          val bindings = Map(shortNames(0) -> a, shortNames(1) -> b)
+          bindings.get(name).map(_->collectionDeclaration).getOrElse(mej.parent->lookup(name))
         case mc @ MappedCollection(target, shortNames, _) =>
           val shortNameTargets: Seq[CollectionRef] = shortNameBindings(target)
           if (shortNameTargets.size != shortNames.size) {
