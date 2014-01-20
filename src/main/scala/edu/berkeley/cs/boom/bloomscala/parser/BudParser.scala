@@ -68,8 +68,8 @@ trait BudParser extends PositionedParserUtilities {
     }
 
     lazy val collectionMap = collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ listOf(colExpr) <~ "}" ^^ {
-      case collection ~ collectionShortNames ~ colExprs =>
-        new MappedCollection(collection, collectionShortNames, colExprs)
+      case collection ~ tupleVars ~ colExprs =>
+        new MappedCollection(collection, tupleVars, colExprs)
     }
     lhs ~ bloomOp ~ rhs ^^ { case l ~ o ~ r => Statement(l, o, r)}
   }

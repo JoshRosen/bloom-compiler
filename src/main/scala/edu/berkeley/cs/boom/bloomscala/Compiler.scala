@@ -22,7 +22,7 @@ object Compiler extends Logging {
       named.statements.map(typer.isWellTyped)
       named
     } catch { case e: Exception =>
-      logger.error(s"Compilation failed: ${e.getMessage}")
+      logger.error("Compilation failed", e)
       throw e
     } finally {
       messaging.report()

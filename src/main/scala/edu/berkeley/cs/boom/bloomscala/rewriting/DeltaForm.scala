@@ -22,11 +22,11 @@ object DeltaForm {
           // first occurrence of a CollectionRef found in a top-down, left-to-right tree traversal.
           case cr: CollectionRef => Set((cr, delta(cr)))
           case MappedCollection(r: CollectionRef, sn, ce) =>  Set((r, MappedCollection(delta(r), sn, ce)))
-          case MappedEquijoin(a, b, aExpr, bExpr, shortNames, colExprs) =>
+          case MappedEquijoin(a, b, aExpr, bExpr, tupleVars, colExprs) =>
             Set(
               // TODO: what about self-joins of the deltas?
-              (a, MappedEquijoin(delta(a), b, aExpr, bExpr, shortNames, colExprs)),
-              (b, MappedEquijoin(a, delta(b), aExpr, bExpr, shortNames, colExprs))
+              (a, MappedEquijoin(delta(a), b, aExpr, bExpr, tupleVars, colExprs)),
+              (b, MappedEquijoin(a, delta(b), aExpr, bExpr, tupleVars, colExprs))
             )
         }
       rhsDeltaRules.map(newRhs => (newRhs._1, Statement(delta(lhs), op, newRhs._2)))

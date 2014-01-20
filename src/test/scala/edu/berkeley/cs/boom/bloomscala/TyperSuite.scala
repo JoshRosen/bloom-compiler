@@ -5,10 +5,6 @@ import org.scalatest.FunSuite
 
 class TyperSuite extends FunSuite {
 
-  test("Referencing undeclared collections should fail") {
-    intercept[CompilerException] { Compiler.compile("lhs <= rhs") }
-  }
-
   test("NotIn schemas should match") {
     intercept[CompilerException] { Compiler.compile(
       """

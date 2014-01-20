@@ -24,22 +24,22 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       case cr: CollectionRef =>
         name(cr)
 
-      case MappedEquijoin(a, b, aExpr, bExpr, shortNames, colExprs) =>
-        val bindings = Map(a.collection -> shortNames(0), b.collection -> shortNames(1))
+      case MappedEquijoin(a, b, aExpr, bExpr, tupVars, colExprs) =>
+        val bindings = Map(a.collection -> tupVars(0), b.collection -> tupVars(1))
         val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         name(a) <> dot <> "join" <> parens( group( nest( ssep(immutable.Seq(
           text(name(b)),
-          "function" <> parens(shortNames(0)) <+> braces( "return" <+> genColExpr(aExpr, bindings) <> semi),
-          "function" <> parens(shortNames(1)) <+> braces( "return" <+> genColExpr(bExpr, bindings) <> semi),
-          "function" <> parens(shortNames(0) <> comma <+> shortNames(1)) <+> braces(
+          "function" <> parens(tupVars(0)) <+> braces( "return" <+> genColExpr(aExpr, bindings) <> semi),
+          "function" <> parens(tupVars(1)) <+> braces( "return" <+> genColExpr(bExpr, bindings) <> semi),
+          "function" <> parens(tupVars(0) <> comma <+> tupVars(1)) <+> braces(
             "return" <+> newRow <> semi
           )), comma <+> line)
         )))
 
-      case mc @ MappedCollection(cr: CollectionRef, shortNames, colExprs) =>
-        val bindings = Map(cr.collection -> shortNames.head)
+      case mc @ MappedCollection(cr: CollectionRef, tupVars, colExprs) =>
+        val bindings = Map(cr.collection -> tupVars.head)
         val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
-        name(cr) <> dot <> "map" <> parens("function" <> parens(shortNames.head) <+> braces(
+        name(cr) <> dot <> "map" <> parens("function" <> parens(tupVars.head) <+> braces(
           "return" <+> newRow <> semi
         ))
     }

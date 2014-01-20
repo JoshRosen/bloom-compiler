@@ -43,7 +43,8 @@ object AST {
   /** Collections that are derived through operations like map and join */
   trait DerivedCollection extends StatementRHS with MappedCollectionTarget with Node
 
-  case class MappedCollection(collection: MappedCollectionTarget, shortNames: List[String],
+
+  case class MappedCollection(collection: MappedCollectionTarget, tupleVars: List[String],
                               colExprs: List[ColExpr]) extends DerivedCollection
   case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
   case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate)
@@ -52,7 +53,7 @@ object AST {
                             b: CollectionRef,
                             aExpr: ColExpr,
                             bExpr: ColExpr,
-                            shortNames: List[String],
+                            tupleVars: List[String],
                             colExprs: List[ColExpr]) extends DerivedCollection
 
   trait CollectionRef extends MappedCollectionTarget with StatementRHS {
@@ -60,6 +61,7 @@ object AST {
     val collection: CollectionDeclaration = new MissingDeclaration()
   }
   case class FreeCollectionRef(name: String) extends CollectionRef
+  case class FreeTupleVariable(name: String) extends CollectionRef
   case class BoundCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
   case class DeltaCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
 
