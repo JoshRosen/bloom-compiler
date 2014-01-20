@@ -66,7 +66,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
     if (rules.isEmpty) return empty
 
     val updateDeltas = rules.map { case Statement(lhs, op, rhs) =>
-      name(lhs) <+> equal <+> name(lhs) <> dot <> "union" <> parens(genRHS(rhs) <+> minus <+> name(lhs)) <> semi
+      name(lhs) <+> equal <+> name(lhs) <> dot <> "union" <> parens(genRHS(rhs) <> dot <> "except" <> parens(name(lhs))) <> semi
     }
 
     s"if (!${deltaCollection.name}Delta.isEmpty())" <+> braces(nest(linebreak <>
