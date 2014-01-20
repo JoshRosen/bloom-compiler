@@ -6,8 +6,6 @@ import edu.berkeley.cs.boom.bloomscala.rewriting.DeltaForm
 import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
 
 
-// TODO: the logic for generating delta rules should be performed
-// in a target-language agnostic manner in its own module.
 object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
 
   def name(cr: CollectionRef) = {
@@ -17,40 +15,58 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
     }
   }
 
-  def gen(node: Node): Doc =
-    node match {
-
-      case BoundFieldRef(collectionRef, field, _) =>
-        // Here, we use the "short name" alias that the user assigned:
-        collectionRef.name <> brackets(collectionRef.collection.indexOfField(field).toString)
+  /**
+   * Translate the RHS of a statement into an Ix query.
+   */
+  def genRHS(rhs: StatementRHS): Doc = {
+    rhs match {
 
       case cr: CollectionRef =>
         name(cr)
 
-      case PlusStatement(a, b) =>
-        gen(a) <+> plus <+> gen(b)
-
       case MappedEquijoin(a, b, aExpr, bExpr, shortNames, colExprs) =>
+        val bindings = Map(a.collection -> shortNames(0), b.collection -> shortNames(1))
+        val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         name(a) <> dot <> "join" <> parens( group( nest( ssep(immutable.Seq(
           text(name(b)),
-          "function" <> parens(shortNames(0)) <+> braces( "return" <+> gen(aExpr) <> semi),
-          "function" <> parens(shortNames(1)) <+> braces( "return" <+> gen(bExpr) <> semi),
+          "function" <> parens(shortNames(0)) <+> braces( "return" <+> genColExpr(aExpr, bindings) <> semi),
+          "function" <> parens(shortNames(1)) <+> braces( "return" <+> genColExpr(bExpr, bindings) <> semi),
           "function" <> parens(shortNames(0) <> comma <+> shortNames(1)) <+> braces(
-            "return" <+> brackets(colExprs.map(gen).reduce(_ <> comma <+> _)) <> semi
+            "return" <+> newRow <> semi
           )), comma <+> line)
         )))
 
       case mc @ MappedCollection(cr: CollectionRef, shortNames, colExprs) =>
+        val bindings = Map(cr.collection -> shortNames.head)
+        val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         name(cr) <> dot <> "map" <> parens("function" <> parens(shortNames.head) <+> braces(
-          "return" <+> brackets(colExprs.map(gen).reduce(_ <> comma <+> _)) <> semi
+          "return" <+> newRow <> semi
         ))
     }
+  }
+
+  /**
+   * Translate column expressions to statements appearing in UDF bodies.
+   *
+   * @param expr the expression to translate
+   * @param bindings a mapping from collections to local variable names in the UDF.
+   */
+  def genColExpr(expr: ColExpr, bindings: PartialFunction[CollectionDeclaration, String]): Doc = {
+    expr match {
+      case cr: CollectionRef =>
+        bindings(cr.collection)
+      case BoundFieldRef(collectionRef, field, _) =>
+        bindings(collectionRef.collection) <> brackets(collectionRef.collection.indexOfField(field).toString)
+      case PlusStatement(a, b) =>
+        genColExpr(a, bindings) <+> plus <+> genColExpr(b, bindings)
+    }
+  }
 
   def generateDeltaConsumerFunctionBody(deltaCollection: CollectionDeclaration, rules: Set[Statement]): Doc = {
     if (rules.isEmpty) return empty
 
     val updateDeltas = rules.map { case Statement(lhs, op, rhs) =>
-      name(lhs) <+> equal <+> name(lhs) <> dot <> "union" <> parens(gen(rhs) <+> minus <+> name(lhs)) <> semi
+      name(lhs) <+> equal <+> name(lhs) <> dot <> "union" <> parens(genRHS(rhs) <+> minus <+> name(lhs)) <> semi
     }
 
     s"if (!${deltaCollection.name}Delta.isEmpty())" <+> braces(nest(linebreak <>
