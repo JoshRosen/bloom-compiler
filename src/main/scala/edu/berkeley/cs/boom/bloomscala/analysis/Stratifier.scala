@@ -13,10 +13,9 @@ case class Stratum(underlying: Int) extends AnyVal with Ordered[Stratum] {
   def compare(that: Stratum): Int = underlying - that.underlying
 }
 
-class Stratifier(messaging: Messaging, namer: Namer, depAnalyzer: DepAnalyzer) {
+class Stratifier(messaging: Messaging, depAnalyzer: DepAnalyzer) {
 
   import depAnalyzer._
-  import namer._
 
   /**
    * A program is temporally stratifiable if there is no negated dependency
@@ -33,7 +32,7 @@ class Stratifier(messaging: Messaging, namer: Namer, depAnalyzer: DepAnalyzer) {
     attr {
       case Statement(lhs, op, rhs) =>
         if (op == BloomOp.<=) {  // deductive rule
-          lhs->collectionStratum
+          lhs.collection->collectionStratum
         } else {  // temporal rule
           Stratum.lastStratum
         }

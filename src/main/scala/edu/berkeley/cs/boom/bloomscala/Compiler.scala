@@ -3,7 +3,6 @@ package edu.berkeley.cs.boom.bloomscala
 import com.typesafe.scalalogging.slf4j.Logging
 import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
-import org.kiama.attribution.Attributable
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import edu.berkeley.cs.boom.bloomscala.analysis._
 import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
@@ -12,33 +11,16 @@ import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
 object Compiler extends Logging {
 
   val messaging = new Messaging
-  val namer = new Namer(messaging)
-  val typer = new Typer(messaging, namer)
-  val depAnalyzer = new DepAnalyzer(messaging, namer)
-  val stratifier = new Stratifier(messaging, namer, depAnalyzer)
-  import namer._
-  import typer._
-  import stratifier._
+  private val namer = new Namer(messaging)
+  private val typer = new Typer(messaging)
 
-  def compile(src: String): Program = {
+  def nameAndType(src: String): Program = {
     messaging.resetmessages()
     try {
       val parseResults = BudParser.parseProgram(src)
-      // Force evaluation of the typechecking:
-      // TODO: the definition of a program being well-typed
-      // should be an attribute at the root of the tree that's
-      // defined recursively over the program's statements
-      // and subtrees
-      def check(node: Attributable) {
-        node match {
-          case cr: CollectionRef => cr->collectionDeclaration
-          case s: Statement => s->isWellTyped
-          case _ =>
-        }
-        node.children.foreach(check)
-      }
-      check(parseResults)
-      parseResults
+      val named = namer.resolveNames(parseResults)
+      named.statements.map(typer.isWellTyped)
+      named
     } catch { case e: Exception =>
       logger.error(s"Compilation failed: ${e.getMessage}")
       throw e
@@ -51,6 +33,14 @@ object Compiler extends Logging {
         throw new CompilerException("Compilation had error messages")
       }
     }
+  }
+
+  def compile(src: String): Program = {
+    val typed = nameAndType(src)
+    val depAnalyzer = new DepAnalyzer(typed)
+    val stratifier = new Stratifier(messaging, depAnalyzer)
+    stratifier.isTemporallyStratifiable(typed)
+    typed
   }
 
   def main(args: Array[String]) {
@@ -68,6 +58,9 @@ object Compiler extends Logging {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-      RxJsCodeGenerator.generateCode(compile(p))
+      val program = compile(p)
+      val depAnalyzer = new DepAnalyzer(program)
+      val stratifier = new Stratifier(messaging, depAnalyzer)
+      RxJsCodeGenerator.generateCode(program, stratifier, depAnalyzer)
   }
 }

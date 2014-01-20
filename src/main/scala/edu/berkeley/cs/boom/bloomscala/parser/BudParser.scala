@@ -36,11 +36,11 @@ trait BudParser extends PositionedParserUtilities {
 
   /********** Statements **********/
 
-  lazy val collectionRef = ident ^^ CollectionRef
+  lazy val collectionRef = ident ^^ { i => FreeCollectionRef(i) }
 
   lazy val fieldRef = (collectionRef ~ "." ~ ident) ^^ {
     case collection ~ "." ~ field =>
-      FieldRef(collection, field)
+      FreeFieldRef(collection, field)
   }
 
   lazy val colTerm = fieldRef

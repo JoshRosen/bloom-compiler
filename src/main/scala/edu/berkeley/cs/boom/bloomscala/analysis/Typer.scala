@@ -6,10 +6,9 @@ import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import edu.berkeley.cs.boom.bloomscala.parser.AST.FieldType._
 
 
-class Typer(val messaging: Messaging, namer: Namer) {
+class Typer(val messaging: Messaging) {
 
   import messaging.message
-  import namer._
 
   def expectType(x: ColExpr, t: FieldType) {
     if (x->typ != t) message(x, s"Expected $t but got ${x->typ}")
@@ -21,7 +20,7 @@ class Typer(val messaging: Messaging, namer: Namer) {
         expectType(a, BloomInt)
         expectType(b, BloomInt)
         BloomInt
-      case field: FieldRef =>
+      case BoundFieldRef(_, _, field) =>
         field.typ
     }
 
@@ -32,17 +31,17 @@ class Typer(val messaging: Messaging, namer: Namer) {
       case mej: MappedEquijoin =>
         mej.colExprs.map(_->typ)
       case cr: CollectionRef =>
-        cr.schema
+        cr.collection.schema
       case notin @ NotIn(a, b) =>
-        if (a.schema != b.schema)
-          message(notin, s"notin called with incompatible schemas:\n${a.schema}\n${b.schema}")
-        a.schema
+        if (a.collection.schema != b.collection.schema)
+          message(notin, s"notin called with incompatible schemas:\n${a.collection.schema}\n${b.collection.schema}")
+        a.collection.schema
     }
 
   lazy val isWellTyped: Statement => Boolean =
     attr {
       case stmt @ Statement(lhs, op, rhs) =>
-        val lSchema = lhs.schema
+        val lSchema = lhs.collection.schema
         val rSchema = rhsSchema(rhs)
         if (rSchema != lSchema) {
           message(stmt, s"RHS has wrong schema; expected $lSchema but got $rSchema")

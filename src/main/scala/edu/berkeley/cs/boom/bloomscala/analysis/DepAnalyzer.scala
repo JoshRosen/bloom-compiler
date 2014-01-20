@@ -1,7 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala.analysis
 
 import org.kiama.attribution.Attribution._
-import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attributable
 
@@ -10,16 +9,14 @@ case class Dependency(dependency: CollectionDeclaration,
                       isTemporal: Boolean,
                       stmt: Statement)
 
-class DepAnalyzer(messaging: Messaging, namer: Namer) {
-
-  import namer._
+class DepAnalyzer(program: Program) {
 
   /**
    * The statements defining this collection.
    */
   lazy val collectionStatements: CollectionDeclaration => Set[Statement] =
     attr { colDecl =>
-      (colDecl.parent[Program]).statements.filter(stmt => collectionDeclaration(stmt.lhs) == colDecl).toSet
+      program.statements.filter(stmt => stmt.lhs.collection == colDecl).toSet
     }
 
   /**
@@ -27,8 +24,13 @@ class DepAnalyzer(messaging: Messaging, namer: Namer) {
    */
   lazy val referencedCollections: Attributable => Set[CollectionDeclaration] =
     attr {
-      case cr: CollectionRef => Set(collectionDeclaration(cr))
+      case cr: CollectionRef => Set(cr.collection)
       case n: Node => n.children.map(referencedCollections).foldLeft(Set.empty[CollectionDeclaration])(_.union(_))
+    }
+
+  lazy val dependentStatements: CollectionDeclaration => Set[Statement] =
+    attr { cd =>
+      program.statements.filter(referencedCollections(_).contains(cd)).toSet
     }
 
   /**
@@ -50,8 +52,8 @@ class DepAnalyzer(messaging: Messaging, namer: Namer) {
   lazy val annotatedDependencies: Attributable => Traversable[(CollectionDeclaration, Boolean)] =
     attr {
       case mc: MappedCollection => mc.colExprs.flatMap(annotatedDependencies)
-      case NotIn(a, b) => Seq((a, false), (b, true))
-      case cr: CollectionRef => Seq((cr, false))
+      case NotIn(a, b) => Seq((a.collection, false), (b.collection, true))
+      case cr: CollectionRef => Seq((cr.collection, false))
       case a: Attributable => a.children.flatMap(annotatedDependencies).toTraversable
     }
 

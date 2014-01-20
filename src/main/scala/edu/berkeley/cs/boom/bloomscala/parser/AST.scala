@@ -54,12 +54,29 @@ object AST {
                             bExpr: ColExpr,
                             shortNames: List[String],
                             colExprs: List[ColExpr]) extends DerivedCollection
-  case class CollectionRef(name: String) extends MappedCollectionTarget with StatementRHS with Node
+
+  trait CollectionRef extends MappedCollectionTarget with StatementRHS {
+    val name: String
+    val collection: CollectionDeclaration = new MissingDeclaration()
+  }
+  case class FreeCollectionRef(name: String) extends CollectionRef
+  case class BoundCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
+  case class DeltaCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
+
   case class Field(name: String, typ: FieldType) extends Node
   class UnknownField extends Field("$$unknownField", FieldType.UnknownFieldType)
 
   trait ColExpr extends Node
-  case class FieldRef(collection: CollectionRef, fieldName: String) extends ColExpr
+
+  trait FieldRef extends ColExpr {
+    val collection: CollectionRef
+    val fieldName: String
+    val field: Field = new UnknownField()
+  }
+
+  case class FreeFieldRef(collection: CollectionRef, fieldName: String) extends FieldRef
+  case class BoundFieldRef(collection: CollectionRef, fieldName: String, override val field: Field) extends FieldRef
+
   case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
 
   trait Predicate extends Node

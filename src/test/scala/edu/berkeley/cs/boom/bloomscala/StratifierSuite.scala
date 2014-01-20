@@ -4,23 +4,34 @@ import org.scalatest.FunSuite
 import com.typesafe.scalalogging.slf4j.Logging
 import edu.berkeley.cs.boom.bloomscala.parser.AST.Program
 import scala.collection.{GenSeq, GenMap}
-import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
+import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, DepAnalyzer, Stratum}
 
+
+// TODO: this test currently has a ton of code duplication.
+// This will be eliminated once the stratifcation results are embedded into rules
+// via a rewriting phase rather than relying on attribution.
 
 class StratifierSuite extends FunSuite with Logging {
 
-  import Compiler.stratifier._
-
   def isStratifiable(source: String) = {
-    val program = Compiler.compile(source)
+    val program = Compiler.nameAndType(source)
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    import stratifier._
     program->isTemporallyStratifiable
   }
 
   def getCollectionStrata(program: Program): GenMap[String, Stratum] = {
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    import stratifier._
     program.declarations.map(d => (d.name, collectionStratum(d))).toMap
   }
 
   def getRuleStrata(program: Program): GenSeq[Stratum] = {
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    import stratifier._
     program.statements.map(ruleStratum).toSeq
   }
 
@@ -34,6 +45,9 @@ class StratifierSuite extends FunSuite with Logging {
         |        [l.from, p.to, l.to, l.cost+p.cost]
         |      }
       """.stripMargin)
+      val depAnalyzer = new DepAnalyzer(program)
+      val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+      import stratifier._
       assert(program->isTemporallyStratifiable)
       assert(getCollectionStrata(program).values.toSet.size === 1)
       assert(getRuleStrata(program).toSet.size === 1)
@@ -48,6 +62,9 @@ class StratifierSuite extends FunSuite with Logging {
         |     c <= a.notin(b)
       """.stripMargin
     )
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    import stratifier._
     assert(program->isTemporallyStratifiable)
     val strata = getCollectionStrata(program)
     assert(strata("a") === Stratum(0))

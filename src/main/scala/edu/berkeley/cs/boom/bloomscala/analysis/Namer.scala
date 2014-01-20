@@ -2,6 +2,7 @@ package edu.berkeley.cs.boom.bloomscala.analysis
 
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.attribution.Attribution._
+import org.kiama.rewriting.Rewriter._
 import org.kiama.util.Messaging
 import org.kiama.attribution.Attributable
 
@@ -9,34 +10,53 @@ class Namer(messaging: Messaging) {
 
   import messaging.message
 
-  implicit def collectionDeclaration: CollectionRef => CollectionDeclaration =
+  def resolveNames(program: Program): Program = {
+    rewrite(everywhere(bindCollectionRef) <* everywhere(bindFieldRef))(program)
+  }
+
+  private val bindCollectionRef =
+    rule {
+      case fc: FreeCollectionRef =>
+        bind(fc)
+    }
+
+  private val bindFieldRef =
+    rule {
+      case fr: FreeFieldRef =>
+        bindField(fr)
+    }
+
+  private implicit def bind: CollectionRef => BoundCollectionRef =
     attr {
-      case cr @ CollectionRef(name) => cr->lookup(name) match {
+      case bound: BoundCollectionRef =>
+        bound
+      case cr @ FreeCollectionRef(name) => cr->lookup(name) match {
         case md: MissingDeclaration =>
           message(cr, s"Unknown collection $name")
-          md
-        case cd => cd
+          BoundCollectionRef(name, md)
+        case cd =>
+          BoundCollectionRef(name, cd)
       }
     }
 
-  implicit def fieldDeclaration: FieldRef => Field =
+  private implicit def bindField: FreeFieldRef => BoundFieldRef =
     attr {
-      case fr @ FieldRef(collectionRef, fieldName) =>
-        val collection = collectionDeclaration(collectionRef)
-        collectionRef.getField(fieldName).getOrElse {
-          message(fr, s"Collection ${collection.name} does not have field $fieldName")
+      case fr @ FreeFieldRef(cr @ BoundCollectionRef(colName, decl), fieldName) =>
+        val field = decl.getField(fieldName).getOrElse {
+          message(fr, s"Collection $colName does not have field $fieldName")
           new UnknownField
         }
+        new BoundFieldRef(cr, fieldName, field)
     }
 
-  lazy val shortNameBindings: MappedCollectionTarget => Seq[CollectionRef] =
+  private lazy val shortNameBindings: MappedCollectionTarget => Seq[CollectionRef] =
     attr {
       case MappedEquijoin(a, b, _, _, _, _) => Seq(a, b)
       case JoinedCollection(a, b, _) => Seq(a, b)
       case cr: CollectionRef => Seq(cr)
     }
 
-  lazy val lookup: String => Attributable => CollectionDeclaration =
+  private lazy val lookup: String => Attributable => CollectionDeclaration =
     paramAttr {
       name => {
         // TODO: When inside of mappedCollection body, we should ONLY allow reference to the short names
@@ -46,7 +66,7 @@ class Namer(messaging: Messaging) {
               s"but got ${shortNames.size}")
           }
           val bindings = Map(shortNames(0) -> a, shortNames(1) -> b)
-          bindings.get(name).map(_->collectionDeclaration).getOrElse(mej.parent->lookup(name))
+          bindings.get(name).map(bind(_).collection).getOrElse(mej.parent->lookup(name))
         case mc @ MappedCollection(target, shortNames, _) =>
           val shortNameTargets: Seq[CollectionRef] = shortNameBindings(target)
           if (shortNameTargets.size != shortNames.size) {
@@ -54,7 +74,7 @@ class Namer(messaging: Messaging) {
                         s"but got ${shortNames.size}")
           }
           val bindings = shortNames.zip(shortNameTargets).toMap
-          bindings.get(name).map(_->collectionDeclaration).getOrElse(mc.parent->lookup(name))
+          bindings.get(name).map(bind(_).collection).getOrElse(mc.parent->lookup(name))
         case program: Program =>
           val decl = program.declarations.find(_.name == name)
           decl.getOrElse(new MissingDeclaration())
