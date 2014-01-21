@@ -58,9 +58,10 @@ object Compiler extends Logging {
         [l.from, p.to, l.to, l.cost+p.cost]
       }
       """.stripMargin
-      val program = compile(p)
-      val depAnalyzer = new DepAnalyzer(program)
-      val stratifier = new Stratifier(messaging, depAnalyzer)
-      RxJsCodeGenerator.generateCode(program, stratifier, depAnalyzer)
+    val program = compile(p)
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(messaging, depAnalyzer)
+    val code = RxJsCodeGenerator.generateCode(program, stratifier, depAnalyzer)
+    println(code)
   }
 }
