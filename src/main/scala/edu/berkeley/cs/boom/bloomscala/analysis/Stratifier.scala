@@ -30,7 +30,7 @@ class Stratifier(messaging: Messaging, depAnalyzer: DepAnalyzer) {
 
   lazy val ruleStratum: Statement => Stratum =
     attr {
-      case Statement(lhs, op, rhs) =>
+      case Statement(lhs, op, rhs, _) =>
         if (op == BloomOp.<=) {  // deductive rule
           lhs.collection->collectionStratum
         } else {  // temporal rule

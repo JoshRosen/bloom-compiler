@@ -17,7 +17,7 @@ object AST {
       nodes.filter(_.isInstanceOf[Statement]).map(_.asInstanceOf[Statement])
   }
 
-  case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS) extends Node
+  case class Statement(lhs: CollectionRef, op: BloomOp, rhs: StatementRHS, number: Int = -1) extends Node
 
   case class CollectionDeclaration(
       collectionType: CollectionType,
@@ -63,7 +63,6 @@ object AST {
   case class FreeCollectionRef(name: String) extends CollectionRef
   case class FreeTupleVariable(name: String) extends CollectionRef
   case class BoundCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
-  case class DeltaCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
 
   case class Field(name: String, typ: FieldType) extends Node
   class UnknownField extends Field("$$unknownField", FieldType.UnknownFieldType)

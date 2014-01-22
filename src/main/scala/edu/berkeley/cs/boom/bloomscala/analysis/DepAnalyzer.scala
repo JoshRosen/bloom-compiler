@@ -38,7 +38,7 @@ class DepAnalyzer(program: Program) {
    */
   lazy val statementDependencies: Statement => Traversable[Dependency] =
     attr {
-      case stmt @ Statement(lhs, op, rhs) =>
+      case stmt @ Statement(lhs, op, rhs, _) =>
         val isTemporal = stmt.op != BloomOp.<=
         for ((collection, isNegated) <- annotatedDependencies(rhs)) yield {
           Dependency(collection, isNegated, isTemporal, stmt)

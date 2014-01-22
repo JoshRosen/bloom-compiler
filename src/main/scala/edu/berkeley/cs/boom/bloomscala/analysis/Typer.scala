@@ -40,7 +40,7 @@ class Typer(val messaging: Messaging) {
 
   lazy val isWellTyped: Statement => Boolean =
     attr {
-      case stmt @ Statement(lhs, op, rhs) =>
+      case stmt @ Statement(lhs, op, rhs, _) =>
         val lSchema = lhs.collection.schema
         val rSchema = rhsSchema(rhs)
         if (rSchema != lSchema) {

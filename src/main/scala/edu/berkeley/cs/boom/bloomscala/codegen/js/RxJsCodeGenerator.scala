@@ -2,7 +2,6 @@ package edu.berkeley.cs.boom.bloomscala.codegen.js
 
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import scala.collection.immutable
-import edu.berkeley.cs.boom.bloomscala.rewriting.DeltaForm
 import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
 
 /**
@@ -24,8 +23,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
   // to clean things up.
   def name(cr: CollectionRef) = {
     cr match {
-      case DeltaCollectionRef(_, collection) => s"${collection.name}Delta"
-      case BoundCollectionRef(_, collection) => s"${collection.name}Table"
+      case BoundCollectionRef(_, collection) => collection.name
     }
   }
 
@@ -76,21 +74,47 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
     }
   }
 
+  def ruleFunctionParameters(stmt: Statement): Seq[CollectionDeclaration] = {
+    stmt.rhs match {
+      case cr: CollectionRef => Seq(cr.collection)
+      case MappedCollection(r: CollectionRef, _, _) => Seq(r.collection)
+      case MappedEquijoin(a, b, _, _, _, _) => Seq(a.collection, b.collection)
+    }
+  }
+
   def generateDeltaConsumerFunctionBody(deltaCollection: CollectionDeclaration, rules: Set[Statement]): Doc = {
     if (rules.isEmpty) return empty
 
     val newDeltaNames = rules.map(r => r.lhs.collection.name).toSet ++ Set(deltaCollection.name)
-    val generateNewDeltas = rules.map { case Statement(lhs, op, rhs) =>
-      name(lhs) + "New" <+> equal <+> genRHS(rhs) <> dot <> "union" <> parens(name(lhs) + "New") <> semi
+    val generateNewDeltas = rules.map { case stmt @ Statement(lhs, op, rhs, _) =>
+      val params = ruleFunctionParameters(stmt)
+      // TODO: handle the case where the same table is referenced twice by a rule:
+      val deltaParams = params.map { c =>
+        if (c == deltaCollection) c.name + "Delta"
+        else c.name + "Table"
+      }
+      val functionCall = s"rule${stmt.number}(${deltaParams.mkString(", ")})"
+      name(lhs) + "DeltaNew" <+> equal <+> functionCall <> dot <> "union" <> parens(name(lhs) + "DeltaNew") <> semi
     }
 
-    s"if (!${deltaCollection.name}Delta.isEmpty())" <+> braces(nest(linebreak <>
+    s"if (!${deltaCollection.name}Delta.isEmpty())" <+> braces(nest(
+      linebreak <>
       newDeltaNames.map(name => text(s"var ${name}DeltaNew = Ix.Enumerable.empty();")).reduce(_ <@@> _) <@@>
       generateNewDeltas.reduce(_ <@@> _) <@@>
       s"${deltaCollection.name}Table = ${deltaCollection.name}Table.union(${deltaCollection.name}Delta);" <@@>
       s"${deltaCollection.name}Delta.forEach(function(x) { outerThis.${deltaCollection.name}Out.onNext(x); });" <@@>
       newDeltaNames.map(name => text(s"${name}Delta = ${name}DeltaNew.except(${name}Table);")).reduce(_ <@@> _)
     ) <> linebreak)
+  }
+
+  def generateRuleFunction(stmt: Statement): Doc = {
+    val functionParams = ruleFunctionParameters(stmt).map(_.name).mkString(", ")
+    s"function rule${stmt.number}" <> parens(functionParams) <+> braces(nest(
+      linebreak <>
+      // TODO: it would be cool to pretty-print the user's Bloom rule here
+      // as a Javascript comment.
+      "return" <+> genRHS(stmt.rhs) <> semi
+    ) <> linebreak) <> linebreak
   }
 
   // TODO: eventually, this needs to take temporal rules into account.
@@ -103,7 +127,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       s"""
         | this.${c.name}In = new Rx.Subject();
         | this.${c.name}In.subscribe(function(x) {
-        |   ${c.name}Delta = ${c.name}Delta.union(Ix.Enumerable.fromArray([x]));
+        |   ${c.name}Delta = ${c.name}Delta.union(Ix.Enumerable.return(x));
         |   handleDeltas();
         | });
         | this.${c.name}Out = new Rx.Subject();
@@ -116,15 +140,20 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
 
     val stratifiedCollections = program.declarations.groupBy(collectionStratum).toSeq.sortBy(x => x._1)
 
+    val ruleFunctions = program.statements.map(generateRuleFunction)
+
     // TODO: this needs to properly take stratification into account.
     val fixpointFunctionBody: Seq[Doc] =
       stratifiedCollections.flatMap { case (stratumNumber, collections) =>
-        // Translate the rules to delta forms:
-        val deltaRules = collections.flatMap(collectionStatements).flatMap(DeltaForm.toDeltaForm)
+        // For each rule, determine its dependencies.  For each dependency, group together
+        // all of the rules that depend on it:
+        val deltaRules = collections.flatMap(collectionStatements).flatMap { stmt =>
+          ruleFunctionParameters(stmt).map((_, stmt))
+        }.groupBy(_._1)
         // Group the rules by which delta they consume:
         val deltaConsumers =
-          for ((collection, rules) <- deltaRules.groupBy(_._1)) yield {
-            generateDeltaConsumerFunctionBody(collection.collection, rules.map(_._2).toSet)
+          for ((collection, rules) <- deltaRules) yield {
+            generateDeltaConsumerFunctionBody(collection, rules.map(_._2).toSet)
           }
         deltaConsumers.toSeq
       }
@@ -142,6 +171,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       empty <@@>
       deltaDeclarations.reduce(_ <@@> _)  <@@>
       empty <@@>
+      ruleFunctions.reduce(_ <@@> _)  <@@>
       "function handleDeltas() " <+> braces(nest(
         linebreak <>
         "while" <+> parens(fixpointNotReached) <+> braces(nest(

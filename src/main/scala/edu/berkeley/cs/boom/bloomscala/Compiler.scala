@@ -48,7 +48,6 @@ object Compiler extends Logging {
       """
       table link, [from: string, to: string, cost: int]
       table path, [from: string, to: string, nxt: string, cost: int]
-      table shortest, [from: string, to: string] => [nxt: string, cost: string]
       // Recursive rules to define all paths from links
       // Base case: every link is a path
       path <= link {|l| [l.from, l.to, l.to, l.cost]}
