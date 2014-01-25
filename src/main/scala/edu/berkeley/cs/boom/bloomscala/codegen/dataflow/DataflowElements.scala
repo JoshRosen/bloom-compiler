@@ -4,14 +4,18 @@ import scala.collection.mutable
 import edu.berkeley.cs.boom.bloomscala.parser.AST.ColExpr
 import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionDeclaration
 import java.util.concurrent.atomic.AtomicInteger
+import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, Stratum}
 
 
-class DataflowGraph {
+class DataflowGraph(stratifier: Stratifier) {
   val nextElementId = new AtomicInteger(0)
   val elements = mutable.HashSet[DataflowElement]()  // Not thread-safe (doesn't matter for now)
+  def stratifiedElements: Seq[(Stratum, mutable.Set[DataflowElement])] = {
+    elements.groupBy(_.stratum).toSeq.sortBy(_._1)
+  }
   val tables: mutable.Map[CollectionDeclaration, Table] =
     mutable.HashMap[CollectionDeclaration, Table]().withDefault { decl =>
-      val table = Table(decl)(this)
+      val table = Table(decl)(this, stratifier.collectionStratum(decl))
       tables(decl) = table
       elements += table
       table
@@ -37,7 +41,7 @@ case class OutputPort(elem: DataflowElement, name: String) {
 /**
  * Represents a generic push-based dataflow element.
  */
-class DataflowElement(implicit graph: DataflowGraph) {
+class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Stratum) {
   /** A unique identifier for this dataflow element */
   val id = graph.nextElementId.getAndIncrement
 
@@ -59,7 +63,7 @@ class DataflowElement(implicit graph: DataflowGraph) {
   override def hashCode(): Int = id
 }
 
-case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph) extends DataflowElement {
+case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   /** Sources of new tuples to process in the current tick */
   val deltaIn = InputPort(this, "dataIn")
   /* Sources of tuples to be added in the next tick */
@@ -79,11 +83,11 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph) e
   override def hashCode(): Int = collection.hashCode()
 }
 
-case class MapElement(mapFunction: List[ColExpr])(implicit g: DataflowGraph) extends DataflowElement {
+case class MapElement(mapFunction: List[ColExpr])(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val input = InputPort(this, "input")
 }
 
-case class HashEquiJoinElement(buildKey: ColExpr, probeKey: ColExpr)(implicit g: DataflowGraph) extends DataflowElement {
+case class HashEquiJoinElement(buildKey: ColExpr, probeKey: ColExpr)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val buildInput = InputPort(this, "buildInput")
   val probeInput = InputPort(this, "probeInput")
 }

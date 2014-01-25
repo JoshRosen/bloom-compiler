@@ -1,6 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import scala.collection.mutable
+import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
 
 
 /**
@@ -29,34 +30,68 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator {
   }
 
   def generateCode(dataflowGraph: DataflowGraph): CharSequence = {
-    val visited = mutable.HashSet[DataflowElement]()
-    val edges = mutable.Buffer[Doc]()
-    def visit(elem: DataflowElement) {
-      if (visited.add(elem)) {
-        def processPort(outPort: OutputPort) {
-          edges ++= outPort.connectedPorts.map { inPort =>
-            val sink= inPort.elem match {
-              case t: Table => "sink"
-              case _ => ""
-            }
-            text(s"""${outPort.elem.id} -> $sink${inPort.elem.id} [headlabel="${inPort.name}",taillabel="${outPort.name}",fontsize=8,arrowsize=0.5];""")
+    // We'll plot each stratum as its own labeled cluster subgraph.
+    // Edges that cross between strata represent dependencies between them.
+
+    // Accumulate the GraphViz statements that should go in each cluster subgraph:
+    val clusteredStatements = mutable.HashMap[Stratum, mutable.Seq[Doc]]()
+
+    // Edges that cross subgraphs should be declared under the outermost digraph element:
+    val topLevelStatements = mutable.Buffer[Doc]()
+
+    for ((stratum, elements) <- dataflowGraph.stratifiedElements) {
+      val stratumStatements = mutable.Buffer[Doc]()
+      clusteredStatements(stratum) = stratumStatements
+
+      val tables = elements.filter(_.isInstanceOf[Table]).map(_.asInstanceOf[Table])
+      val nonTables = elements.filterNot(_.isInstanceOf[Table])
+
+      def processPort(outPort: OutputPort) {
+        outPort.connectedPorts.foreach { inPort =>
+          val edgeCrossesStratum = inPort.elem.stratum != stratum
+          val sink = inPort.elem match {
+            case t: Table => "sink"
+            case _ => ""
+          }
+          val edge = text(s"""${outPort.elem.id} -> $sink${inPort.elem.id} [headlabel="${inPort.name}",taillabel="${outPort.name}",fontsize=8,arrowsize=0.5];""")
+          if (edgeCrossesStratum) {
+            topLevelStatements += edge
+          } else {
+            stratumStatements += edge
           }
         }
-        processPort(elem.deltaOut)
-        processPort(elem.deleteOut)
-        (elem.deleteOut.connectedPorts ++ elem.deltaOut.connectedPorts).map(_.elem).foreach(visit)
+      }
+
+      // To make the graph easier to read, non-constant tables are displayed
+      // as separate source and sink nodes:
+      tables.foreach { t =>
+        stratumStatements += text(s"""${t.id} [label="${label(t)}",shape="${shape(t)}"];""")
+        if (t.hasInputs) {
+          stratumStatements += text(s"""sink${t.id} [label="${label(t)}",shape="${shape(t)}"];""")
+        }
+        processPort(t.deltaOut)
+        processPort(t.deleteOut)
+      }
+
+      nonTables.foreach { e =>
+        stratumStatements += text(s"""${e.id} [label="${label(e)}",shape="${shape(e)}"];""")
+        processPort(e.deltaOut)
+        processPort(e.deleteOut)
       }
     }
-    dataflowGraph.elements.foreach(visit)
-    val nodes = visited.map { elem =>
-      text(s"""${elem.id} [label="${label(elem)}",shape="${shape(elem)}"];""")
-    } ++ dataflowGraph.tables.values.filter(_.hasInputs).map { elem =>
-      text(s"""sink${elem.id} [label="${label(elem)}",shape="${shape(elem)}"];""")
+
+    val clusterDot = clusteredStatements.map { case (stratum, dotStatements) =>
+      "subgraph" <+> s"cluster${stratum.underlying}" <+> braces(nest(
+        linebreak <>
+        s"""label="Stratum ${stratum.underlying}";""" <@@>
+        dotStatements.reduce(_ <@@> _)
+      ) <> linebreak)
     }
+
     val dot = "digraph" <+> "dataflow" <+> braces(nest(
       linebreak <>
-      nodes.reduce(_ <@@> _) <@@>
-      edges.reduce(_ <@@> _)
+      clusterDot.reduce(_ <@@> _) <@@>
+      topLevelStatements.foldLeft(empty)(_ <@@> _)
     ) <> linebreak)
     super.pretty(dot)
   }

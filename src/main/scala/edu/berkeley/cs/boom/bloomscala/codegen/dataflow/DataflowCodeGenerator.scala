@@ -2,7 +2,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
-import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
+import edu.berkeley.cs.boom.bloomscala.analysis.{Stratum, DepAnalyzer, Stratifier}
 
 /**
  * Base class for code generators targeting push-based dataflow systems.
@@ -23,8 +23,9 @@ trait DataflowCodeGenerator extends CodeGenerator {
    */
   def generateCode(dataflowGraph: DataflowGraph): CharSequence
 
-  private def addElementsForRule(graph: DataflowGraph, stmt: Statement) {
+  private def addElementsForRule(graph: DataflowGraph, stmt: Statement, stratum: Stratum) {
     implicit val g = graph
+    implicit val s = stratum
     stmt match { case Statement(lhs, op, rhs, number) =>
       // First, create the dataflow elements to produce the RHS.
       val rhsOutputs: Set[DataflowElement] = rhs match {
@@ -64,18 +65,8 @@ trait DataflowCodeGenerator extends CodeGenerator {
   }
 
   final def generateCode(program: Program, stratifier: Stratifier, depAnalyzer: DepAnalyzer): CharSequence = {
-    import depAnalyzer._
-    import stratifier._
-
-    // Wire up the dataflow graph:
-
-    implicit val graph = new DataflowGraph()
-    program.statements.foreach(rule => addElementsForRule(graph, rule))
-
-    // Group the dataflow elements according to the stratum in which they should be placed
-    // and pass the resulting graph to the next stage for code generation:
-
-    val stratifiedCollections = program.declarations.groupBy(collectionStratum).toSeq.sortBy(x => x._1)
+    implicit val graph = new DataflowGraph(stratifier)
+    program.statements.foreach(rule => addElementsForRule(graph, rule, stratifier.ruleStratum(rule)))
     generateCode(graph)
   }
 }
