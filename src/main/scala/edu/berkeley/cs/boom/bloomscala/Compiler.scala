@@ -6,15 +6,28 @@ import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import edu.berkeley.cs.boom.bloomscala.analysis._
 import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
+import com.quantifind.sumac.{ArgMain, FieldArgs}
+import java.io.File
+import com.quantifind.sumac.validation.Required
+import scala.io.Source
+import edu.berkeley.cs.boom.bloomscala.codegen.{CodeGenerator}
+import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.{GraphvizDataflowPrinter, DataflowCodeGenerator}
 
 
-object Compiler extends Logging {
+class CompilerArgs extends FieldArgs {
+  @Required
+  var infile: File = null
+  var target: String = "RxJS"
+}
+
+
+object Compiler extends Logging with ArgMain[CompilerArgs] {
 
   val messaging = new Messaging
   private val namer = new Namer(messaging)
   private val typer = new Typer(messaging)
 
-  def nameAndType(src: String): Program = {
+  def nameAndType(src: CharSequence): Program = {
     messaging.resetmessages()
     try {
       val parseResults = BudParser.parseProgram(src)
@@ -35,7 +48,10 @@ object Compiler extends Logging {
     }
   }
 
-  def compile(src: String): Program = {
+  /**
+   * Compiles a program, but stops short of code generation.
+   */
+  def compile(src: CharSequence): Program = {
     val typed = nameAndType(src)
     val depAnalyzer = new DepAnalyzer(typed)
     val stratifier = new Stratifier(messaging, depAnalyzer)
@@ -43,24 +59,20 @@ object Compiler extends Logging {
     typed
   }
 
-  def main(args: Array[String]) {
-    val p =
-      """
-      table link, [from: string, to: string, cost: int]
-      table path, [from: string, to: string, nxt: string, cost: int]
-      // Recursive rules to define all paths from links
-      // Base case: every link is a path
-      path <= link {|l| [l.from, l.to, l.to, l.cost]}
-      // Inductive case: make a path of length n+1 by connecting a link to a
-      // path of length n
-      path <= (link * path) on (link.to == path.from) { |l, p|
-        [l.from, p.to, l.to, l.cost+p.cost]
-      }
-      """.stripMargin
-    val program = compile(p)
+  def generateCode(program: Program, generator: CodeGenerator): CharSequence = {
     val depAnalyzer = new DepAnalyzer(program)
     val stratifier = new Stratifier(messaging, depAnalyzer)
-    val code = RxJsCodeGenerator.generateCode(program, stratifier, depAnalyzer)
+    generator.generateCode(program, stratifier, depAnalyzer)
+  }
+
+  def main(args: CompilerArgs) {
+    val generator = args.target.toLowerCase match {
+      case "rxjs" => RxJsCodeGenerator
+      case "dataflow" => GraphvizDataflowPrinter
+      case unknown => throw new IllegalArgumentException(s"Unknown target platform $unknown")
+    }
+    val program = compile(Source.fromFile(args.infile).mkString)
+    val code = generateCode(program, generator)
     println(code)
   }
 }

@@ -21,7 +21,8 @@ object BloomScalaBuild extends Build {
         "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
         "org.slf4j" % "slf4j-log4j12" % "1.7.5",
         "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
-        "com.googlecode.kiama" % "kiama_2.10" % "1.5.2"
+        "com.googlecode.kiama" % "kiama_2.10" % "1.5.2",
+        "com.quantifind" %% "sumac" % "0.2.3"
       ),
      parallelExecution in Test := false
     )

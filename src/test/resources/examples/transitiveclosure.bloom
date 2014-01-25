@@ -1,0 +1,10 @@
+table link, [from: string, to: string, cost: int]
+table path, [from: string, to: string, nxt: string, cost: int]
+// Recursive rules to define all paths from links
+// Base case: every link is a path
+path <= link {|l| [l.from, l.to, l.to, l.cost]}
+// Inductive case: make a path of length n+1 by connecting a link to a
+// path of length n
+path <= (link * path) on (link.to == path.from) { |l, p|
+    [l.from, p.to, l.to, l.cost+p.cost]
+}

@@ -3,6 +3,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.js
 import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import scala.collection.immutable
 import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
+import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
 
 /**
  * Compiles Bloom programs to Javascript that use the RxJs and IxJS libraries.
@@ -16,7 +17,7 @@ import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
  * myObj.collectionNameOut is a Subject that can be subscribed() to
  * in order to receive callbacks when new tuples are added to collections.
  */
-object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
+object RxJsCodeGenerator extends CodeGenerator {
 
   // TODO: mangle collection names so as not to conflict with Javascript reserved words.
   // The naming code isn't 100% centralized here, so I'll have to go back through later
@@ -133,7 +134,7 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
   }
 
   // TODO: eventually, this needs to take temporal rules into account.
-  def generateCode(program: Program, stratifier: Stratifier, depAnalyzer: DepAnalyzer): String = {
+  def generateCode(program: Program, stratifier: Stratifier, depAnalyzer: DepAnalyzer): CharSequence = {
     import depAnalyzer._
     import stratifier._
 

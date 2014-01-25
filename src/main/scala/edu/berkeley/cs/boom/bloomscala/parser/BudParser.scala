@@ -82,7 +82,7 @@ trait BudParser extends PositionedParserUtilities {
 }
 
 object BudParser extends BudParser {
-  def parseProgram(str: String): Program = {
+  def parseProgram(str: CharSequence): Program = {
     val p = parseAll(program, str).get
     // When I tried to apply these rewrites after initializing the tree, it appears
     // that the new tree could contain references to the root of the old tree via
