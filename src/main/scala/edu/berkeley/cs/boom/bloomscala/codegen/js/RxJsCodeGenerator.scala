@@ -38,6 +38,16 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
     "function" <> parens(varName) <+> braces (space <> "return" <+> newRow <> semi <> space)
   }
 
+  def methodCall(target: Doc, methodName: Doc, args: Doc*): Doc = {
+    val argsSeq = immutable.Seq(args).flatten
+    target <> dot <> methodName <> parens(group(nest(ssep(argsSeq, comma <> line))))
+  }
+
+  def functionCall(functionName: Doc, args: Doc*): Doc = {
+    val argsSeq = immutable.Seq(args).flatten
+    functionName <> parens(group(nest(ssep(argsSeq, comma <> line))))
+  }
+
   /**
    * Translate the RHS of a statement into an Ix query.
    */
@@ -50,17 +60,16 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       case MappedEquijoin(a, b, aExpr, bExpr, tupVars, colExprs) =>
         val bindings = Map(a.collection -> tupVars(0), b.collection -> tupVars(1))
         val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
-        name(a) <> dot <> "join" <> parens( group( nest( ssep(immutable.Seq(
-          text(name(b)),
+        methodCall(name(a), "join",
+          name(b),
           genLambda(aExpr, tupVars(0)),
           genLambda(bExpr, tupVars(1)),
           "function" <> parens(tupVars(0) <> comma <+> tupVars(1)) <+> braces(
             "return" <+> newRow <> semi
-          )), comma <+> line)
-        )))
+          ))
 
       case mc @ MappedCollection(cr: CollectionRef, tupVars, colExprs) =>
-        name(cr) <> dot <> "map" <> parens(genLambda(colExprs, tupVars.head))
+        methodCall(name(cr), "map", genLambda(colExprs, tupVars.head))
     }
   }
 
@@ -99,9 +108,8 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
       val deltaParams = params.map { c =>
         if (c == deltaCollection) c.name + "Delta"
         else c.name + "Table"
-      }
-      val functionCall = s"rule${stmt.number}(${deltaParams.mkString(", ")})"
-      name(lhs) + "DeltaNew" <+> equal <+> functionCall <> dot <> "union" <> parens(name(lhs) + "DeltaNew") <> semi
+      }.map(text)
+      name(lhs) + "DeltaNew" <+> equal <+> functionCall(s"rule${stmt.number}", deltaParams: _*) <> dot <> "union" <> parens(name(lhs) + "DeltaNew") <> semi
     }
 
     s"if (!${deltaCollection.name}Delta.isEmpty())" <+> braces(nest(
