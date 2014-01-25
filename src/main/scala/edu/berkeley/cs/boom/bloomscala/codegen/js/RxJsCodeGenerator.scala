@@ -27,6 +27,17 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
     }
   }
 
+  def genLambda(colExpr: ColExpr, varName: String): Doc = {
+    val bindings: PartialFunction[CollectionDeclaration, String] = { case _ => varName}
+    "function" <> parens(varName) <+> braces ( space <> "return" <+> genColExpr(colExpr, bindings) <> semi <> space)
+  }
+
+  def genLambda(colExprs: List[ColExpr], varName: String): Doc = {
+    val bindings: PartialFunction[CollectionDeclaration, String] = { case _ => varName}
+    val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
+    "function" <> parens(varName) <+> braces (space <> "return" <+> newRow <> semi <> space)
+  }
+
   /**
    * Translate the RHS of a statement into an Ix query.
    */
@@ -41,19 +52,15 @@ object RxJsCodeGenerator extends org.kiama.output.PrettyPrinter {
         val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         name(a) <> dot <> "join" <> parens( group( nest( ssep(immutable.Seq(
           text(name(b)),
-          "function" <> parens(tupVars(0)) <+> braces( "return" <+> genColExpr(aExpr, bindings) <> semi),
-          "function" <> parens(tupVars(1)) <+> braces( "return" <+> genColExpr(bExpr, bindings) <> semi),
+          genLambda(aExpr, tupVars(0)),
+          genLambda(bExpr, tupVars(1)),
           "function" <> parens(tupVars(0) <> comma <+> tupVars(1)) <+> braces(
             "return" <+> newRow <> semi
           )), comma <+> line)
         )))
 
       case mc @ MappedCollection(cr: CollectionRef, tupVars, colExprs) =>
-        val bindings = Map(cr.collection -> tupVars.head)
-        val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
-        name(cr) <> dot <> "map" <> parens("function" <> parens(tupVars.head) <+> braces(
-          "return" <+> newRow <> semi
-        ))
+        name(cr) <> dot <> "map" <> parens(genLambda(colExprs, tupVars.head))
     }
   }
 
