@@ -55,7 +55,9 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
     val typed = nameAndType(src)
     val depAnalyzer = new DepAnalyzer(typed)
     val stratifier = new Stratifier(messaging, depAnalyzer)
-    stratifier.isTemporallyStratifiable(typed)
+    if (!stratifier.isTemporallyStratifiable(typed)) {
+      throw new StratificationError("Program is unstratifiable")
+    }
     typed
   }
 

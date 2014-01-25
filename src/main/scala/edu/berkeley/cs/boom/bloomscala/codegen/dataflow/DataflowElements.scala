@@ -91,3 +91,10 @@ case class HashEquiJoinElement(buildKey: ColExpr, probeKey: ColExpr)(implicit g:
   val buildInput = InputPort(this, "buildInput")
   val probeInput = InputPort(this, "probeInput")
 }
+
+// TODO: might want to have more general "anti-join" and outer-join elements;
+// This is an okay placeholder for now, since it lets me test the stratification.
+case class NotInElement()(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+  val probeInput = InputPort(this, "probeInput")
+  val tableInput = InputPort(this, "tableInput")
+}

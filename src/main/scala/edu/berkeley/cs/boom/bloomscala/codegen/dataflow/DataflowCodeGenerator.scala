@@ -47,6 +47,13 @@ trait DataflowCodeGenerator extends CodeGenerator {
           bDelta.buildInput <-> aTable.deltaOut
           bDelta.probeInput <-> bTable.deltaOut
           Set(aDelta, bDelta)
+        case NotIn(a, b) =>
+          val aTable = graph.tables(a.collection)
+          val bTable = graph.tables(b.collection)
+          val notin = new NotInElement()
+          notin.probeInput <-> aTable.deltaOut
+          notin.tableInput <-> bTable.deltaOut
+          Set(notin)
       }
       // Wire the final element's outputs to their targets, with the connection type
       // dependent on the type of Bloom operator (<= vs <+ or <-):
