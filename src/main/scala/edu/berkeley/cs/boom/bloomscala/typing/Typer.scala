@@ -4,19 +4,41 @@ import org.kiama.attribution.Attribution._
 import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
+import org.kiama.rewriting.PositionalRewriter._
 
 
 class Typer(val messaging: Messaging) {
 
   import messaging.message
 
-  def expectType(x: ColExpr, t: FieldType) {
+  /**
+   * Assign types to all expressions.
+   */
+  def resolveTypes(program: Program): Program = {
+    program.statements.map(isWellTyped)
+    rewrite(everywherebu(assignType))(program)
+  }
+
+  private val assignType =
+    rule {
+      case ut: UnboundType =>
+        // An unbound type should appear as a field of an Expr, so
+        // grab that expression's type:
+        ut.parent match {
+          case ce: ColExpr =>
+            colType(ce)
+          case re: RowExpr =>
+            rowType(re)
+        }
+    }
+
+  private def expectType(x: ColExpr, t: BloomType) {
     if (x->colType != t) message(x, s"Expected $t but got ${x->colType}")
   }
 
-  lazy val colType: ColExpr => FieldType =
+  private lazy val colType: ColExpr => BloomType =
     attr {
-      case PlusStatement(a, b) =>
+      case PlusStatement(a, b, _) =>
         expectType(a, BloomInt)
         expectType(b, BloomInt)
         BloomInt
@@ -24,13 +46,13 @@ class Typer(val messaging: Messaging) {
         field.typ
     }
 
-  lazy val rowType: RowExpr => RecordType =
+  private lazy val rowType: RowExpr => RecordType =
     attr {
       case RowExpr(colExprs) =>
         RecordType(colExprs.map(_->colType))
     }
 
-  lazy val rhsSchema: StatementRHS => RecordType =
+  private lazy val rhsSchema: StatementRHS => RecordType =
     attr {
       case mc: MappedCollection =>
         mc.rowExpr->rowType

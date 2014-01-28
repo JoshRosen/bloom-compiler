@@ -24,24 +24,40 @@ object RxJsCodeGenerator extends CodeGenerator {
   // to clean things up.
   def name(cr: CollectionRef) = {
     cr match {
-      case BoundCollectionRef(_, collection) => collection.name
+      case BoundCollectionRef(_, collection, _) => collection.name
     }
   }
 
-  def genLambda(colExpr: ColExpr, varName: String): Doc = {
-    val bindings: PartialFunction[CollectionDeclaration, String] = { case _ => varName}
-    "function" <> parens(varName) <+> braces ( space <> "return" <+> genColExpr(colExpr, bindings) <> semi <> space)
+  /**
+   * Translate an expression into a Javascript lambda function.
+   */
+  def genLambda(expr: Expr, parameterNames: List[String]): Doc = {
+    "function" <> parens(parameterNames.map(text).reduce(_ <> comma <+> _)) <+> braces {
+      space <> "return" <+> genExpr(expr, parameterNames) <> semi <> space
+    }
   }
 
-  def genLambda(rowExpr: RowExpr, varName: String): Doc = {
-    val bindings: PartialFunction[CollectionDeclaration, String] = { case _ => varName}
-    val newRow = brackets(rowExpr.cols.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
-    "function" <> parens(varName) <+> braces (space <> "return" <+> newRow <> semi <> space)
+  /**
+   * Translate expressions to statements appearing in UDF bodies.
+   *
+   * @param expr the expression to translate
+   * @param parameterNames a list of the UDF's parameter names.
+   */
+  def genExpr(expr: Expr, parameterNames: List[String]): Doc = {
+    expr match {
+      case cr: CollectionRef =>
+        parameterNames(cr.lambdaArgNumber)
+      case BoundFieldRef(cr, field, _) =>
+        parameterNames(cr.lambdaArgNumber) <> brackets(cr.collection.indexOfField(field).toString)
+      case PlusStatement(a, b, _) =>
+        genExpr(a, parameterNames) <+> plus <+> genExpr(b, parameterNames)
+      case RowExpr(colExprs) =>
+        brackets(colExprs.map(genExpr(_, parameterNames)).reduce(_ <> comma <+> _))
+    }
   }
 
   def methodCall(target: Doc, methodName: Doc, args: Doc*): Doc = {
-    val argsSeq = immutable.Seq(args).flatten
-    target <> dot <> methodName <> parens(group(nest(ssep(argsSeq, comma <> line))))
+    target <> dot <> functionCall(methodName, args: _*)
   }
 
   def functionCall(functionName: Doc, args: Doc*): Doc = {
@@ -59,35 +75,14 @@ object RxJsCodeGenerator extends CodeGenerator {
         name(cr)
 
       case MappedEquijoin(a, b, aExpr, bExpr, tupVars, rowExpr) =>
-        val bindings = Map(a.collection -> tupVars(0), b.collection -> tupVars(1))
-        val newRow = brackets(rowExpr.cols.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         methodCall(name(a), "join",
           name(b),
-          genLambda(aExpr, tupVars(0)),
-          genLambda(bExpr, tupVars(1)),
-          "function" <> parens(tupVars(0) <> comma <+> tupVars(1)) <+> braces(
-            "return" <+> newRow <> semi
-          ))
+          genLambda(aExpr, List(tupVars(0))),
+          genLambda(bExpr, List(tupVars(1))),
+          genLambda(rowExpr, tupVars))
 
       case mc @ MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
-        methodCall(name(cr), "map", genLambda(rowExpr, tupVars.head))
-    }
-  }
-
-  /**
-   * Translate column expressions to statements appearing in UDF bodies.
-   *
-   * @param expr the expression to translate
-   * @param bindings a mapping from collections to local variable names in the UDF.
-   */
-  def genColExpr(expr: ColExpr, bindings: PartialFunction[CollectionDeclaration, String]): Doc = {
-    expr match {
-      case cr: CollectionRef =>
-        bindings(cr.collection)
-      case BoundFieldRef(collectionRef, field, _) =>
-        bindings(collectionRef.collection) <> brackets(collectionRef.collection.indexOfField(field).toString)
-      case PlusStatement(a, b) =>
-        genColExpr(a, bindings) <+> plus <+> genColExpr(b, bindings)
+        methodCall(name(cr), "map", genLambda(rowExpr, tupVars))
     }
   }
 

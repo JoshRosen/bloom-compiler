@@ -11,7 +11,7 @@ import java.io.File
 import com.quantifind.sumac.validation.Required
 import scala.io.Source
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
-import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.{GraphvizDataflowPrinter, DataflowCodeGenerator}
+import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.GraphvizDataflowPrinter
 import edu.berkeley.cs.boom.bloomscala.typing.Typer
 
 
@@ -33,8 +33,8 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
     try {
       val parseResults = BudParser.parseProgram(src)
       val named = namer.resolveNames(parseResults)
-      named.statements.map(typer.isWellTyped)
-      named
+      val typed = typer.resolveTypes(named)
+      typed
     } catch { case e: Exception =>
       logger.error("Compilation failed", e)
       throw e

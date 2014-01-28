@@ -1,8 +1,12 @@
 package edu.berkeley.cs.boom.bloomscala.ast
 
+import edu.berkeley.cs.boom.bloomscala.typing.{RecordType, BloomType}
+
 /************************* Base Classes ***********************************/
 
-trait Expr extends Node
+sealed trait Expr extends Node {
+  val typ: BloomType
+}
 
 /**
  * An expression producing a scalar value.
@@ -10,14 +14,16 @@ trait Expr extends Node
 trait ColExpr extends Expr
 
 /**
- * An expression producing an array.
+ * An expression producing a fixed-size array with heterogeneous element types.
  */
-case class RowExpr(cols: List[ColExpr]) extends Expr
+case class RowExpr(cols: List[ColExpr]) extends Expr {
+  val typ: BloomType = RecordType(cols.map(_.typ))
+}
 
 
 /*************************** Arithmetic ***********************************/
 
-case class PlusStatement(lhs: ColExpr, rhs: ColExpr) extends ColExpr
+case class PlusStatement(lhs: ColExpr, rhs: ColExpr, override val typ: BloomType) extends ColExpr
 
 
 /************************** Predicates ***********************************/

@@ -6,6 +6,9 @@ import org.kiama.rewriting.PositionalRewriter._
 import org.kiama.util.{Positioned, Messaging}
 import org.kiama.attribution.Attributable
 
+/**
+ * Rewrites the AST to bind field and collection references.
+ */
 class Namer(messaging: Messaging) {
 
   import messaging.message
@@ -33,24 +36,24 @@ class Namer(messaging: Messaging) {
       case bound: BoundCollectionRef =>
         bound
       case tv @ FreeTupleVariable(name) => tv->lookupTupleVar(name) match {
-        case md: MissingDeclaration =>
+        case (md: MissingDeclaration, _) =>
           message(tv, s"Unknown tuple variable $name")
-          BoundCollectionRef(name, md)
-        case cd =>
-          BoundCollectionRef(name, cd)
+          BoundCollectionRef(name, md, -1)
+        case (cd, lambdaArgNumber) =>
+          BoundCollectionRef(name, cd, lambdaArgNumber)
       }
       case cr @ FreeCollectionRef(name) => cr->lookup(name) match {
         case md: MissingDeclaration =>
           message(cr, s"Unknown collection $name")
-          BoundCollectionRef(name, md)
+          BoundCollectionRef(name, md, 0)
         case cd =>
-          BoundCollectionRef(name, cd)
+          BoundCollectionRef(name, cd, 0)
       }
     }
 
   private implicit def bindField: FreeFieldRef => BoundFieldRef =
     attr {
-      case fr @ FreeFieldRef(cr @ BoundCollectionRef(colName, decl), fieldName) =>
+      case fr @ FreeFieldRef(cr @ BoundCollectionRef(colName, decl, _), fieldName) =>
         val field = decl.getField(fieldName).getOrElse {
           message(fr, s"Collection $colName does not have field $fieldName")
           new UnknownField
@@ -71,19 +74,26 @@ class Namer(messaging: Messaging) {
     }
   }
 
-  private lazy val lookupTupleVar: String => Attributable => CollectionDeclaration =
+  private lazy val lookupTupleVar: String => Attributable => (CollectionDeclaration, Int) =
     paramAttr {
       name => {
         case mej @ MappedEquijoin(a, b, _, _, tupleVars, _) =>
           val targets = tupleVarBindingTargets(mej)
           checkTupleVarCount(targets.size, tupleVars, mej)
-          val bindings = tupleVars.zip(targets).toMap
-          bindings.get(name).map(bind(_).collection).getOrElse(new MissingDeclaration)
+          val lambdaArgNumber = tupleVars.indexOf(name)
+          if (lambdaArgNumber == -1) {
+            (new MissingDeclaration, -1)
+          } else {
+            (bind(targets(lambdaArgNumber)).collection, lambdaArgNumber)
+          }
         case mc @ MappedCollection(target, tupleVars, _) =>
           val targets = tupleVarBindingTargets(target)
           checkTupleVarCount(targets.size, tupleVars, mc)
-          val bindings = tupleVars.zip(targets).toMap
-          bindings.get(name).map(bind(_).collection).getOrElse(new MissingDeclaration)
+          if (tupleVars.head != name) {
+            (new MissingDeclaration, -1)
+          } else {
+            (bind(targets.head).collection, 0)
+          }
         case n =>
           n.parent->lookupTupleVar(name)
         case program: Program =>

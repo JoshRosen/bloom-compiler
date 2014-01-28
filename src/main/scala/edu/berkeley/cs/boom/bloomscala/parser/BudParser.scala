@@ -4,7 +4,7 @@ import edu.berkeley.cs.boom.bloomscala.ast._
 import org.kiama.util.PositionedParserUtilities
 import org.kiama.attribution.Attribution
 import edu.berkeley.cs.boom.bloomscala.rewriting.InitialRewrites
-import edu.berkeley.cs.boom.bloomscala.typing.{CollectionType, FieldType}
+import edu.berkeley.cs.boom.bloomscala.typing.{UnknownType, CollectionType, FieldType}
 
 trait BudParser extends PositionedParserUtilities {
 
@@ -46,7 +46,7 @@ trait BudParser extends PositionedParserUtilities {
 
   lazy val colTerm = fieldRef
   lazy val colExpr: Parser[ColExpr] = {
-    def plus = colTerm ~ "+" ~ colExpr ^^ {case a ~ "+" ~ b => PlusStatement(a, b)}
+    def plus = colTerm ~ "+" ~ colExpr ^^ {case a ~ "+" ~ b => PlusStatement(a, b, UnknownType())}
     plus | colTerm
   }
   lazy val rowExpr: Parser[RowExpr] = listOf(colExpr) ^^ RowExpr
