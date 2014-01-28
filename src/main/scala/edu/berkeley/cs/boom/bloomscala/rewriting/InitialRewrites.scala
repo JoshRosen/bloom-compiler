@@ -13,8 +13,8 @@ object InitialRewrites {
 
   private val joinMapConsolidation =
     rule {
-      case MappedCollection(JoinedCollection(a, b, EqualityPredicate(aExpr, bExpr)), tupleVars, colExprs) =>
-        MappedEquijoin(a, b, aExpr, bExpr, tupleVars, colExprs)
+      case MappedCollection(JoinedCollection(a, b, EqualityPredicate(aExpr, bExpr)), tupleVars, rowExpr) =>
+        MappedEquijoin(a, b, aExpr, bExpr, tupleVars, rowExpr)
     }
 
   private val collectionRefToTupleVar =

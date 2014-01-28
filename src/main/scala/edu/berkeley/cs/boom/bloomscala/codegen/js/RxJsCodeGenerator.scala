@@ -33,9 +33,9 @@ object RxJsCodeGenerator extends CodeGenerator {
     "function" <> parens(varName) <+> braces ( space <> "return" <+> genColExpr(colExpr, bindings) <> semi <> space)
   }
 
-  def genLambda(colExprs: List[ColExpr], varName: String): Doc = {
+  def genLambda(rowExpr: RowExpr, varName: String): Doc = {
     val bindings: PartialFunction[CollectionDeclaration, String] = { case _ => varName}
-    val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
+    val newRow = brackets(rowExpr.cols.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
     "function" <> parens(varName) <+> braces (space <> "return" <+> newRow <> semi <> space)
   }
 
@@ -58,9 +58,9 @@ object RxJsCodeGenerator extends CodeGenerator {
       case cr: CollectionRef =>
         name(cr)
 
-      case MappedEquijoin(a, b, aExpr, bExpr, tupVars, colExprs) =>
+      case MappedEquijoin(a, b, aExpr, bExpr, tupVars, rowExpr) =>
         val bindings = Map(a.collection -> tupVars(0), b.collection -> tupVars(1))
-        val newRow = brackets(colExprs.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
+        val newRow = brackets(rowExpr.cols.map(genColExpr(_, bindings)).reduce(_ <> comma <+> _))
         methodCall(name(a), "join",
           name(b),
           genLambda(aExpr, tupVars(0)),
@@ -69,8 +69,8 @@ object RxJsCodeGenerator extends CodeGenerator {
             "return" <+> newRow <> semi
           ))
 
-      case mc @ MappedCollection(cr: CollectionRef, tupVars, colExprs) =>
-        methodCall(name(cr), "map", genLambda(colExprs, tupVars.head))
+      case mc @ MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
+        methodCall(name(cr), "map", genLambda(rowExpr, tupVars.head))
     }
   }
 

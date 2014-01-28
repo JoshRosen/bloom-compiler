@@ -31,8 +31,8 @@ trait DataflowCodeGenerator extends CodeGenerator {
       val rhsOutputs: Set[DataflowElement] = rhs match {
         case cr: CollectionRef =>
           Set(graph.tables(cr.collection))
-        case MappedCollection(cr: CollectionRef, tupVars, colExprs) =>
-          val mapElem = MapElement(colExprs)
+        case MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
+          val mapElem = MapElement(rowExpr)
           mapElem.input <-> graph.tables(cr.collection).deltaOut
           Set(mapElem)
         case MappedEquijoin(a, b, aExpr, bExpr, tupVars, colExprs) =>

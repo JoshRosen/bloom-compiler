@@ -51,7 +51,7 @@ class DepAnalyzer(program: Program) {
    */
   lazy val annotatedDependencies: Attributable => Traversable[(CollectionDeclaration, Boolean)] =
     attr {
-      case mc: MappedCollection => mc.colExprs.flatMap(annotatedDependencies)
+      case mc: MappedCollection => mc.rowExpr.cols.flatMap(annotatedDependencies)
       case NotIn(a, b) => Seq((a.collection, false), (b.collection, true))
       case cr: CollectionRef => Seq((cr.collection, false))
       case a: Attributable => a.children.flatMap(annotatedDependencies).toTraversable

@@ -4,6 +4,7 @@ import edu.berkeley.cs.boom.bloomscala.parser.AST._
 import org.kiama.util.PositionedParserUtilities
 import org.kiama.attribution.Attribution
 import edu.berkeley.cs.boom.bloomscala.rewriting.InitialRewrites
+import edu.berkeley.cs.boom.bloomscala.typing.FieldType
 
 trait BudParser extends PositionedParserUtilities {
 
@@ -48,6 +49,7 @@ trait BudParser extends PositionedParserUtilities {
     def plus = colTerm ~ "+" ~ colExpr ^^ {case a ~ "+" ~ b => PlusStatement(a, b)}
     plus | colTerm
   }
+  lazy val rowExpr: Parser[RowExpr] = listOf(colExpr) ^^ RowExpr
   lazy val predicate = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
 
   lazy val statement = {
@@ -67,9 +69,9 @@ trait BudParser extends PositionedParserUtilities {
       case a ~ "." ~ "notin" ~ "(" ~ b ~ ")" => new NotIn(a, b)
     }
 
-    lazy val collectionMap = collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ listOf(colExpr) <~ "}" ^^ {
-      case collection ~ tupleVars ~ colExprs =>
-        new MappedCollection(collection, tupleVars, colExprs)
+    lazy val collectionMap = collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ rowExpr <~ "}" ^^ {
+      case collection ~ tupleVars ~ rowExpr =>
+        new MappedCollection(collection, tupleVars, rowExpr)
     }
     lhs ~ bloomOp ~ rhs ^^ { case l ~ o ~ r => Statement(l, o, r)}
   }

@@ -1,9 +1,10 @@
-package edu.berkeley.cs.boom.bloomscala.analysis
+package edu.berkeley.cs.boom.bloomscala.typing
 
 import org.kiama.attribution.Attribution._
 import org.kiama.util.Messaging
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
-import edu.berkeley.cs.boom.bloomscala.parser.AST.FieldType._
+import edu.berkeley.cs.boom.bloomscala.parser.AST
+import AST._
+import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 
 
 class Typer(val messaging: Messaging) {
@@ -24,12 +25,12 @@ class Typer(val messaging: Messaging) {
         field.typ
     }
 
-  lazy val rhsSchema: StatementRHS => List[FieldType] =
+  lazy val rhsSchema: StatementRHS => RecordType =
     attr {
       case mc: MappedCollection =>
-        mc.colExprs.map(_->typ)
+        RecordType(mc.rowExpr.cols.map(_->typ))
       case mej: MappedEquijoin =>
-        mej.colExprs.map(_->typ)
+        RecordType(mej.rowExpr.cols.map(_->typ))
       case cr: CollectionRef =>
         cr.collection.schema
       case notin @ NotIn(a, b) =>

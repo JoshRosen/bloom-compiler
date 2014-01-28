@@ -1,8 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import scala.collection.mutable
-import edu.berkeley.cs.boom.bloomscala.parser.AST.ColExpr
-import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionDeclaration
+import edu.berkeley.cs.boom.bloomscala.parser.AST.{RowExpr, ColExpr, CollectionDeclaration}
 import java.util.concurrent.atomic.AtomicInteger
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, Stratum}
 
@@ -83,7 +82,7 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
   override def hashCode(): Int = collection.hashCode()
 }
 
-case class MapElement(mapFunction: List[ColExpr])(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class MapElement(mapFunction: RowExpr)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val input = InputPort(this, "input")
 }
 

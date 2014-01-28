@@ -2,9 +2,10 @@ package edu.berkeley.cs.boom.bloomscala.parser
 
 import org.kiama.attribution.Attributable
 import org.kiama.util.Positioned
+import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 import edu.berkeley.cs.boom.bloomscala.parser.AST.BloomOp.BloomOp
 import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionType.CollectionType
-import edu.berkeley.cs.boom.bloomscala.parser.AST.FieldType.FieldType
+import edu.berkeley.cs.boom.bloomscala.typing.RecordType
 
 
 object AST {
@@ -25,7 +26,7 @@ object AST {
       keys: List[Field],
       values: List[Field])
     extends Node {
-    val schema: List[FieldType.FieldType] = (keys ++ values).map(_.typ)
+    val schema: RecordType = RecordType((keys ++ values).map(_.typ))
     def getField(name: String): Option[Field] = {
       (keys ++ values).find(_.name == name)
     }
@@ -45,7 +46,7 @@ object AST {
 
 
   case class MappedCollection(collection: MappedCollectionTarget, tupleVars: List[String],
-                              colExprs: List[ColExpr]) extends DerivedCollection
+                              rowExpr: RowExpr) extends DerivedCollection
   case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
   case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate)
     extends DerivedCollection
@@ -54,7 +55,7 @@ object AST {
                             aExpr: ColExpr,
                             bExpr: ColExpr,
                             tupleVars: List[String],
-                            colExprs: List[ColExpr]) extends DerivedCollection
+                            rowExpr: RowExpr) extends DerivedCollection
 
   trait CollectionRef extends MappedCollectionTarget with StatementRHS {
     val name: String
@@ -65,9 +66,11 @@ object AST {
   case class BoundCollectionRef(name: String, override val collection: CollectionDeclaration) extends CollectionRef
 
   case class Field(name: String, typ: FieldType) extends Node
-  class UnknownField extends Field("$$unknownField", FieldType.UnknownFieldType)
+  class UnknownField extends Field("$$unknownField", UnknownFieldType)
 
-  trait ColExpr extends Node
+  trait Expr extends Node
+  trait ColExpr extends Expr
+  case class RowExpr(cols: List[ColExpr]) extends Expr
 
   trait FieldRef extends ColExpr {
     val collection: CollectionRef
@@ -103,15 +106,6 @@ object AST {
     val nameToType: Map[String, CollectionType] = Map(
       "table" -> Table,
       "scratch" -> Scratch
-    )
-  }
-
-  object FieldType extends Enumeration {
-    type FieldType = Value
-    val BloomInt, BloomString, UnknownFieldType = Value
-    val nameToType: Map[String, FieldType] = Map(
-      "int" -> BloomInt,
-      "string" -> BloomString
     )
   }
 }
