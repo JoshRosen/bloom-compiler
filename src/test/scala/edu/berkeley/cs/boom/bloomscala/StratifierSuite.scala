@@ -2,7 +2,7 @@ package edu.berkeley.cs.boom.bloomscala
 
 import org.scalatest.FunSuite
 import com.typesafe.scalalogging.slf4j.Logging
-import edu.berkeley.cs.boom.bloomscala.parser.AST.Program
+import edu.berkeley.cs.boom.bloomscala.ast.Program
 import scala.collection.{GenSeq, GenMap}
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, DepAnalyzer, Stratum}
 

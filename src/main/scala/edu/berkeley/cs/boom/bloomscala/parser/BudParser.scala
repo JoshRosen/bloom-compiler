@@ -1,10 +1,10 @@
 package edu.berkeley.cs.boom.bloomscala.parser
 
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import org.kiama.util.PositionedParserUtilities
 import org.kiama.attribution.Attribution
 import edu.berkeley.cs.boom.bloomscala.rewriting.InitialRewrites
-import edu.berkeley.cs.boom.bloomscala.typing.FieldType
+import edu.berkeley.cs.boom.bloomscala.typing.{CollectionType, FieldType}
 
 trait BudParser extends PositionedParserUtilities {
 

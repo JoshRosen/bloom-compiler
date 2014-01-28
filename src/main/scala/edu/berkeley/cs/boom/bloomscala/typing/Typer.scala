@@ -2,8 +2,7 @@ package edu.berkeley.cs.boom.bloomscala.typing
 
 import org.kiama.attribution.Attribution._
 import org.kiama.util.Messaging
-import edu.berkeley.cs.boom.bloomscala.parser.AST
-import AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 
 

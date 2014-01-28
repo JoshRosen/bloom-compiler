@@ -1,7 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import scala.collection.mutable
-import edu.berkeley.cs.boom.bloomscala.parser.AST.{RowExpr, ColExpr, CollectionDeclaration}
+import edu.berkeley.cs.boom.bloomscala.ast._
 import java.util.concurrent.atomic.AtomicInteger
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, Stratum}
 

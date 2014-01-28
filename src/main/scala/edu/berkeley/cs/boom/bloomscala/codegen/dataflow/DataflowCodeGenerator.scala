@@ -1,7 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratum, DepAnalyzer, Stratifier}
 
 /**

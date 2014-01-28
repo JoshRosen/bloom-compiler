@@ -2,7 +2,7 @@ package edu.berkeley.cs.boom.bloomscala
 
 import com.typesafe.scalalogging.slf4j.Logging
 import org.kiama.util.Messaging
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import edu.berkeley.cs.boom.bloomscala.analysis._
 import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator

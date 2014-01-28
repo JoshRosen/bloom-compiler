@@ -1,6 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala.analysis
 
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import org.kiama.attribution.Attribution._
 import org.kiama.rewriting.PositionalRewriter._
 import org.kiama.util.{Positioned, Messaging}

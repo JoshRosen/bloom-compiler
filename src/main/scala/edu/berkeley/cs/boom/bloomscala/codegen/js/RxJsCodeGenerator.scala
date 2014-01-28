@@ -1,6 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.js
 
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import scala.collection.immutable
 import edu.berkeley.cs.boom.bloomscala.analysis.{DepAnalyzer, Stratifier}
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator

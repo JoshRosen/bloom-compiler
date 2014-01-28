@@ -1,6 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala.rewriting
 
-import edu.berkeley.cs.boom.bloomscala.parser.AST._
+import edu.berkeley.cs.boom.bloomscala.ast._
 import org.kiama.rewriting.PositionalRewriter._
 import java.util.concurrent.atomic.AtomicInteger
 
