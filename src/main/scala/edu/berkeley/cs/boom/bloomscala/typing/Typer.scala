@@ -12,10 +12,10 @@ class Typer(val messaging: Messaging) {
   import messaging.message
 
   def expectType(x: ColExpr, t: FieldType) {
-    if (x->typ != t) message(x, s"Expected $t but got ${x->typ}")
+    if (x->colType != t) message(x, s"Expected $t but got ${x->colType}")
   }
 
-  lazy val typ: ColExpr => FieldType =
+  lazy val colType: ColExpr => FieldType =
     attr {
       case PlusStatement(a, b) =>
         expectType(a, BloomInt)
@@ -25,12 +25,18 @@ class Typer(val messaging: Messaging) {
         field.typ
     }
 
+  lazy val rowType: RowExpr => RecordType =
+    attr {
+      case RowExpr(colExprs) =>
+        RecordType(colExprs.map(_->colType))
+    }
+
   lazy val rhsSchema: StatementRHS => RecordType =
     attr {
       case mc: MappedCollection =>
-        RecordType(mc.rowExpr.cols.map(_->typ))
+        mc.rowExpr->rowType
       case mej: MappedEquijoin =>
-        RecordType(mej.rowExpr.cols.map(_->typ))
+        mej.rowExpr->rowType
       case cr: CollectionRef =>
         cr.collection.schema
       case notin @ NotIn(a, b) =>

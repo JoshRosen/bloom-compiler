@@ -5,7 +5,7 @@ import org.kiama.util.Positioned
 import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 import edu.berkeley.cs.boom.bloomscala.parser.AST.BloomOp.BloomOp
 import edu.berkeley.cs.boom.bloomscala.parser.AST.CollectionType.CollectionType
-import edu.berkeley.cs.boom.bloomscala.typing.RecordType
+import edu.berkeley.cs.boom.bloomscala.typing.{FieldType, RecordType}
 
 
 object AST {
