@@ -94,10 +94,10 @@ class Namer(messaging: Messaging) {
           } else {
             (bind(targets.head).collection, 0)
           }
-        case n =>
-          n.parent->lookupTupleVar(name)
         case program: Program =>
           throw new IllegalStateException("A tuple variable appeared in an invalid context")
+        case n =>
+          n.parent->lookupTupleVar(name)
       }
     }
 
