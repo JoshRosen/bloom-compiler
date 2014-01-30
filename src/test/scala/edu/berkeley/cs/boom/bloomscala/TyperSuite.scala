@@ -6,7 +6,7 @@ import org.scalatest.FunSuite
 class TyperSuite extends FunSuite {
 
   test("NotIn schemas should match") {
-    intercept[CompilerException] { Compiler.compile(
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
       """
         | table a, [val: int]
         | table b, [val: string]
@@ -16,7 +16,7 @@ class TyperSuite extends FunSuite {
   }
 
   test("NotIn LHS and RHS schemas should match") {
-    intercept[CompilerException] { Compiler.compile(
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
       """
         | table a, [val: int]
         | table b, [val: int]

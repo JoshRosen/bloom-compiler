@@ -52,7 +52,7 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
   /**
    * Compiles a program, but stops short of code generation.
    */
-  def compile(src: CharSequence): Program = {
+  def compileToIntermediateForm(src: CharSequence): Program = {
     val typed = nameAndType(src)
     val depAnalyzer = new DepAnalyzer(typed)
     val stratifier = new Stratifier(messaging, depAnalyzer)
@@ -74,7 +74,7 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
       case "dataflow" => GraphvizDataflowPrinter
       case unknown => throw new IllegalArgumentException(s"Unknown target platform $unknown")
     }
-    val program = compile(Source.fromFile(args.infile).mkString)
+    val program = compileToIntermediateForm(Source.fromFile(args.infile).mkString)
     val code = generateCode(program, generator)
     println(code)
   }

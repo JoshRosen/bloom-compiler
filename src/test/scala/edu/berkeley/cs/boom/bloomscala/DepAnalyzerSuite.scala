@@ -7,7 +7,7 @@ import edu.berkeley.cs.boom.bloomscala.analysis.DepAnalyzer
 class DepAnalyzerSuite extends FunSuite with Logging {
 
   test("Statements with only out edges should not participate in deductive cycles") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table a, []
         |      table b, []
@@ -26,7 +26,7 @@ class DepAnalyzerSuite extends FunSuite with Logging {
   }
 
   test("Statements with only in edges should not participate in deductive cycles") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table a, []
         |      table b, []
@@ -45,7 +45,7 @@ class DepAnalyzerSuite extends FunSuite with Logging {
   }
 
   test("Isolated statements should not participate in deductive cycles") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table a, []
         |      table b, []
@@ -66,7 +66,7 @@ class DepAnalyzerSuite extends FunSuite with Logging {
   }
 
   test("Temporal cycles are not declarative cycles") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table a, []
         |      table b, []
@@ -81,7 +81,7 @@ class DepAnalyzerSuite extends FunSuite with Logging {
   }
 
   test("Declarative cycles are detected properly") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table a, []
         |      table b, []

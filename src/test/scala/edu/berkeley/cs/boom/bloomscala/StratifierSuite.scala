@@ -36,7 +36,7 @@ class StratifierSuite extends FunSuite with Logging {
   }
 
   test("Positive programs should have only one stratum") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |      table link, [from: string, to: string, cost: int]
         |      table path, [from: string, to: string, nxt: string, cost: int]
@@ -54,7 +54,7 @@ class StratifierSuite extends FunSuite with Logging {
    }
 
   test("Collections should be placed in higher strata than their negated dependencies") {
-    val program = Compiler.compile(
+    val program = Compiler.compileToIntermediateForm(
       """
         |     table a, [val: int]
         |     table b, [val: int]
