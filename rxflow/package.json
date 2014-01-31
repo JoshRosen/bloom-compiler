@@ -1,0 +1,15 @@
+{
+    "private": true,
+    "name": "rxflow",
+    "version": "0.0.1",
+    "main": "index.js",
+    "dependencies": {
+        "rx": "2.2.13"
+    },
+    "devDependencies": {
+        "vows": "0.7.0"
+    },
+    "scripts": {
+        "test": "./node_modules/vows/bin/vows"
+    }
+}
