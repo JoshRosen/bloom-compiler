@@ -27,7 +27,7 @@ object BloomScalaBuild extends Build {
     settings = buildSettings ++ Seq(
       run <<= run in Compile in compiler,
       console <<= console in Compile in compiler)
-  ) aggregate(compiler, tryBloom)
+  ) aggregate(compiler)
 
   lazy val compiler = Project(
     "bloom-compiler",
@@ -42,11 +42,5 @@ object BloomScalaBuild extends Build {
       )
     )
   )
-
-  lazy val tryBloom = Project(
-    "try-bloom",
-    file("try-bloom"),
-    settings = buildSettings
-  ) dependsOn(compiler)
 
 }
