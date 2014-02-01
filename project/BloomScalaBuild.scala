@@ -1,31 +1,52 @@
 import sbt._
 import sbt.Keys._
 
+
+object BuildSettings {
+  val buildSettings = Defaults.defaultSettings ++ Seq(
+    organization := "edu.berkeley.cs.boom",
+    version := "0.1-SNAPSHOT",
+    scalaVersion := "2.10.3",
+    resolvers ++= Seq(
+      Resolver.sonatypeRepo("snapshots"),
+      Resolver.sonatypeRepo("releases"),
+      Resolver.typesafeRepo("releases")
+    ),
+    parallelExecution in Test := false
+  )
+}
+
+
 object BloomScalaBuild extends Build {
 
-  lazy val bloomScala = Project(
-    id = "bloom-scala",
-    base = file("."),
-    settings = Project.defaultSettings ++ Seq(
-      name := "bloom-scala",
-      organization := "edu.berkeley.cs.boom",
-      version := "0.1-SNAPSHOT",
-      scalaVersion := "2.10.3",
-      resolvers ++= Seq(
-        "sonatype-snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-        "sonatype-releases"  at "http://oss.sonatype.org/content/repositories/releases",
-        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-        "JBoss Repository" at "http://repository.jboss.org/nexus/content/repositories/releases/"
-      ),
+  import BuildSettings._
+
+  lazy val root = Project(
+    "root",
+    file("."),
+    settings = buildSettings ++ Seq(
+      run <<= run in Compile in compiler,
+      console <<= console in Compile in compiler)
+  ) aggregate(compiler, tryBloom)
+
+  lazy val compiler = Project(
+    "bloom-compiler",
+    file("compiler"),
+    settings = buildSettings ++ Seq(
       libraryDependencies ++= Seq(
         "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
         "org.slf4j" % "slf4j-log4j12" % "1.7.5",
         "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
         "com.googlecode.kiama" % "kiama_2.10" % "1.5.2",
         "com.quantifind" %% "sumac" % "0.2.3"
-      ),
-     parallelExecution in Test := false
+      )
     )
   )
-}
 
+  lazy val tryBloom = Project(
+    "try-bloom",
+    file("try-bloom"),
+    settings = buildSettings
+  ) dependsOn(compiler)
+
+}
