@@ -7,6 +7,7 @@ import java.io.File
 import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.GraphvizDataflowPrinter
+import org.kiama.util.Messaging
 
 /**
  * Test suite that ensures that the example programs compile to each of
@@ -24,9 +25,9 @@ class ExamplesSuite extends PropSpec with TableDrivenPropertyChecks {
   )
 
   def compilesWithBackend(backend: CodeGenerator)(file: File) {
-    Compiler.messaging.resetmessages()
+    implicit val messaging = new Messaging
     val intermediate = Compiler.compileToIntermediateForm(Source.fromFile(file).mkString)
-    assert(Compiler.messaging.messagecount === 0)
+    assert(messaging.messagecount === 0)
     Compiler.generateCode(intermediate, backend)
   }
 

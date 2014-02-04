@@ -1,8 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import org.scalatest.FunSuite
 
-class NamerSuite extends FunSuite {
+class NamerSuite extends BloomScalaSuite {
 
   test("Referencing undeclared collections should fail") {
     intercept[CompilerException] { Compiler.compileToIntermediateForm("lhs <= rhs") }

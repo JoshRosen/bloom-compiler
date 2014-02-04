@@ -1,9 +1,8 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import org.scalatest.FunSuite
 
 
-class TyperSuite extends FunSuite {
+class TyperSuite extends BloomScalaSuite {
 
   test("NotIn schemas should match") {
     intercept[CompilerException] { Compiler.compileToIntermediateForm(

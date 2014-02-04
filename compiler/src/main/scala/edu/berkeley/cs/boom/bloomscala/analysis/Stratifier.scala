@@ -13,7 +13,7 @@ case class Stratum(underlying: Int) extends AnyVal with Ordered[Stratum] {
   def compare(that: Stratum): Int = underlying - that.underlying
 }
 
-class Stratifier(messaging: Messaging, depAnalyzer: DepAnalyzer) {
+class Stratifier(depAnalyzer: DepAnalyzer)(implicit messaging: Messaging) {
 
   import depAnalyzer._
 

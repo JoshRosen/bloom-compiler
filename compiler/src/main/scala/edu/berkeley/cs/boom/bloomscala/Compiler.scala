@@ -24,16 +24,12 @@ class CompilerArgs extends FieldArgs {
 
 object Compiler extends Logging with ArgMain[CompilerArgs] {
 
-  val messaging = new Messaging
-  private val namer = new Namer(messaging)
-  private val typer = new Typer(messaging)
-
-  def nameAndType(src: CharSequence): Program = {
+  def nameAndType(src: CharSequence)(implicit messaging: Messaging): Program = {
     messaging.resetmessages()
     try {
       val parseResults = BudParser.parseProgram(src)
-      val named = namer.resolveNames(parseResults)
-      val typed = typer.resolveTypes(named)
+      val named = new Namer(messaging).resolveNames(parseResults)
+      val typed = new Typer(messaging).resolveTypes(named)
       typed
     } catch { case e: Exception =>
       logger.error("Compilation failed", e)
@@ -52,23 +48,24 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
   /**
    * Compiles a program, but stops short of code generation.
    */
-  def compileToIntermediateForm(src: CharSequence): Program = {
+  def compileToIntermediateForm(src: CharSequence)(implicit messaging: Messaging): Program = {
     val typed = nameAndType(src)
     val depAnalyzer = new DepAnalyzer(typed)
-    val stratifier = new Stratifier(messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     if (!stratifier.isTemporallyStratifiable(typed)) {
       throw new StratificationError("Program is unstratifiable")
     }
     typed
   }
 
-  def generateCode(program: Program, generator: CodeGenerator): CharSequence = {
+  def generateCode(program: Program, generator: CodeGenerator)(implicit messaging: Messaging): CharSequence = {
     val depAnalyzer = new DepAnalyzer(program)
-    val stratifier = new Stratifier(messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     generator.generateCode(program, stratifier, depAnalyzer)
   }
 
   def main(args: CompilerArgs) {
+    implicit val messaging = new Messaging
     val generator = args.target.toLowerCase match {
       case "rxjs" => RxJsCodeGenerator
       case "dataflow" => GraphvizDataflowPrinter

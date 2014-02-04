@@ -1,7 +1,5 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import org.scalatest.FunSuite
-import com.typesafe.scalalogging.slf4j.Logging
 import edu.berkeley.cs.boom.bloomscala.ast.Program
 import scala.collection.{GenSeq, GenMap}
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, DepAnalyzer, Stratum}
@@ -11,26 +9,26 @@ import edu.berkeley.cs.boom.bloomscala.analysis.{Stratifier, DepAnalyzer, Stratu
 // This will be eliminated once the stratifcation results are embedded into rules
 // via a rewriting phase rather than relying on attribution.
 
-class StratifierSuite extends FunSuite with Logging {
+class StratifierSuite extends BloomScalaSuite {
 
   def isStratifiable(source: String) = {
     val program = Compiler.nameAndType(source)
     val depAnalyzer = new DepAnalyzer(program)
-    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     import stratifier._
     program->isTemporallyStratifiable
   }
 
   def getCollectionStrata(program: Program): GenMap[String, Stratum] = {
     val depAnalyzer = new DepAnalyzer(program)
-    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     import stratifier._
     program.declarations.map(d => (d.name, collectionStratum(d))).toMap
   }
 
   def getRuleStrata(program: Program): GenSeq[Stratum] = {
     val depAnalyzer = new DepAnalyzer(program)
-    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     import stratifier._
     program.statements.map(ruleStratum).toSeq
   }
@@ -46,7 +44,7 @@ class StratifierSuite extends FunSuite with Logging {
         |      }
       """.stripMargin)
       val depAnalyzer = new DepAnalyzer(program)
-      val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+      val stratifier = new Stratifier(depAnalyzer)
       import stratifier._
       assert(program->isTemporallyStratifiable)
       assert(getCollectionStrata(program).values.toSet.size === 1)
@@ -63,7 +61,7 @@ class StratifierSuite extends FunSuite with Logging {
       """.stripMargin
     )
     val depAnalyzer = new DepAnalyzer(program)
-    val stratifier = new Stratifier(Compiler.messaging, depAnalyzer)
+    val stratifier = new Stratifier(depAnalyzer)
     import stratifier._
     assert(program->isTemporallyStratifiable)
     val strata = getCollectionStrata(program)
