@@ -36,4 +36,10 @@ class UnifierSuite extends FunSuite {
     def b = FunctionType(List(BloomString, BloomInt), BloomInt, Set.empty)
     assert(Unifier.unify(a, b).isFailure)
   }
+
+  test("functions with different arities should not unify") {
+    def a = FunctionType(List.empty, BloomInt, Set.empty)
+    def b = FunctionType(List(BloomString, BloomInt), BloomInt, Set.empty)
+    assert(Unifier.unify(a, b).isFailure)
+  }
 }

@@ -37,6 +37,8 @@ object Unifier {
             case FunctionType(bArgTypes, bReturnType, _) =>
               val aTypes = aArgTypes ++ List(aReturnType)
               val bTypes = bArgTypes ++ List(bReturnType)
+              if (aTypes.size != bTypes.size)
+                return Failure (new UnificationError("Cannot unify functions of different arities"))
               val recursiveUnifiers = aTypes.zip(bTypes).map(x => unify(x._1, x._2, bindings).get).flatMap(_.toSeq).toSet
               // Ensure that none of the bindings conflict:
               val unifier = recursiveUnifiers.toMap
