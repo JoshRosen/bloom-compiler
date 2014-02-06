@@ -64,7 +64,7 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
 
 case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   /** Sources of new tuples to process in the current tick */
-  val deltaIn = InputPort(this, "dataIn")
+  val deltaIn = InputPort(this, "deltaIn")
   /* Sources of tuples to be added in the next tick */
   val pendingIn = InputPort(this, "pendingIn")
   /* Sources of tuples to be deleted in the next tick */
@@ -82,13 +82,13 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
   override def hashCode(): Int = collection.hashCode()
 }
 
-case class MapElement(mapFunction: RowExpr)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val input = InputPort(this, "input")
 }
 
-case class HashEquiJoinElement(buildKey: ColExpr, probeKey: ColExpr)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
-  val buildInput = InputPort(this, "buildInput")
-  val probeInput = InputPort(this, "probeInput")
+case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+  val leftInput = InputPort(this, "leftInput")
+  val rightInput = InputPort(this, "rightInput")
 }
 
 // TODO: might want to have more general "anti-join" and outer-join elements;

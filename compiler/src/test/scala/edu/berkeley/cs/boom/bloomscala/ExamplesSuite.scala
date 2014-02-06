@@ -4,7 +4,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.PropSpec
 import scala.io.Source
 import java.io.File
-import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
+import edu.berkeley.cs.boom.bloomscala.codegen.js.RxFlowCodeGenerator
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.GraphvizDataflowPrinter
 import org.kiama.util.Messaging
@@ -31,8 +31,8 @@ class ExamplesSuite extends PropSpec with TableDrivenPropertyChecks {
     Compiler.generateCode(intermediate, backend)
   }
 
-  property("Should compile with RxJs backend") {
-    forAll(examples) { compilesWithBackend(RxJsCodeGenerator) }
+  property("Should compile with RxFlow backend") {
+    forAll(examples) { compilesWithBackend(RxFlowCodeGenerator) }
   }
 
   property("Should compile with GraphViz backend") {

@@ -5,7 +5,7 @@ import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.parser.BudParser
 import edu.berkeley.cs.boom.bloomscala.analysis._
-import edu.berkeley.cs.boom.bloomscala.codegen.js.RxJsCodeGenerator
+import edu.berkeley.cs.boom.bloomscala.codegen.js.RxFlowCodeGenerator
 import com.quantifind.sumac.{ArgMain, FieldArgs}
 import java.io.File
 import com.quantifind.sumac.validation.Required
@@ -66,7 +66,7 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
   def main(args: CompilerArgs) {
     implicit val messaging = new Messaging
     val generator = args.target.toLowerCase match {
-      case "rxjs" => RxJsCodeGenerator
+      case "rxflow" => RxFlowCodeGenerator
       case "dataflow" => GraphvizDataflowPrinter
       case unknown => throw new IllegalArgumentException(s"Unknown target platform $unknown")
     }

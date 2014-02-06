@@ -32,21 +32,24 @@ trait DataflowCodeGenerator extends CodeGenerator {
         case cr: CollectionRef =>
           Set(graph.tables(cr.collection))
         case MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
-          val mapElem = MapElement(rowExpr)
+          val mapElem = MapElement(rowExpr, 1)
           mapElem.input <-> graph.tables(cr.collection).deltaOut
           Set(mapElem)
-        case MappedEquijoin(a, b, aExpr, bExpr, tupVars, colExprs) =>
+        case MappedEquijoin(a, b, aExpr, bExpr, tupVars, rowExpr) =>
           // We can implement this using a pair of stateful hash join operators,
           // one for each delta.
           val aTable = graph.tables(a.collection)
           val bTable = graph.tables(b.collection)
-          val aDelta = new HashEquiJoinElement(bExpr, aExpr)
-          val bDelta = new HashEquiJoinElement(bExpr, aExpr)
-          aDelta.buildInput <-> bTable.deltaOut
-          aDelta.probeInput <-> aTable.deltaOut
-          bDelta.buildInput <-> aTable.deltaOut
-          bDelta.probeInput <-> bTable.deltaOut
-          Set(aDelta, bDelta)
+          val aDelta = new HashEquiJoinElement(aExpr, bExpr, true)
+          val bDelta = new HashEquiJoinElement(aExpr, bExpr, false)
+          aDelta.leftInput <-> aTable.deltaOut
+          aDelta.rightInput <-> bTable.deltaOut
+          bDelta.leftInput <-> aTable.deltaOut
+          bDelta.rightInput <-> bTable.deltaOut
+          val project = MapElement(rowExpr, 2)
+          project.input <-> aDelta.deltaOut
+          project.input <-> bDelta.deltaOut
+          Set(project)
         case NotIn(a, b) =>
           val aTable = graph.tables(a.collection)
           val bTable = graph.tables(b.collection)
