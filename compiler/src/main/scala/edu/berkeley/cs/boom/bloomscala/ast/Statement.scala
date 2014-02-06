@@ -34,3 +34,7 @@ case class MappedEquijoin(a: CollectionRef,
                           bExpr: ColExpr,
                           tupleVars: List[String],
                           rowExpr: RowExpr) extends DerivedCollection
+
+case class ChooseCollection(collection: CollectionRef,
+                            groupingCols: List[FieldRef],
+                            func: FunctionCall) extends DerivedCollection

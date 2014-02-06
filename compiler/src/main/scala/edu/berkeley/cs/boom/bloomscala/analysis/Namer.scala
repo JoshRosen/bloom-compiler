@@ -5,16 +5,17 @@ import org.kiama.attribution.Attribution._
 import org.kiama.rewriting.PositionalRewriter._
 import org.kiama.util.{Positioned, Messaging}
 import org.kiama.attribution.Attributable
+import edu.berkeley.cs.boom.bloomscala.stdlib.{UnknownFunction, BuiltInFunctions}
 
 /**
- * Rewrites the AST to bind field and collection references.
+ * Rewrites the AST to bind field, function, and collection references.
  */
 class Namer(messaging: Messaging) {
 
   import messaging.message
 
   def resolveNames(program: Program): Program = {
-    rewrite(everywhere(bindCollectionRef) <* everywhere(bindFieldRef))(program)
+    rewrite(everywhere(bindCollectionRef) <* everywhere(bindFieldRef) <* everywhere(bindFunctionRef))(program)
   }
 
   private val bindCollectionRef =
@@ -29,6 +30,12 @@ class Namer(messaging: Messaging) {
     rule {
       case fr: FreeFieldRef =>
         bindField(fr)
+    }
+
+  private val bindFunctionRef =
+    rule {
+      case fr: FreeFunctionRef =>
+        bindFunction(fr)
     }
 
   private implicit def bind: CollectionRef => BoundCollectionRef =
@@ -59,6 +66,16 @@ class Namer(messaging: Messaging) {
           new UnknownField
         }
         new BoundFieldRef(cr, fieldName, field)
+    }
+
+  private implicit def bindFunction: FreeFunctionRef => BoundFunctionRef =
+    attr {
+      case fr @ FreeFunctionRef(name) =>
+        val func = BuiltInFunctions.nameToFunction.getOrElse(name, {
+          message(fr, s"Could not find function named $name")
+          UnknownFunction
+        })
+        BoundFunctionRef(name, func)
     }
 
   private lazy val tupleVarBindingTargets: MappedCollectionTarget => Seq[CollectionRef] =

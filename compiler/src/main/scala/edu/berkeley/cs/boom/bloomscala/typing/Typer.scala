@@ -7,7 +7,7 @@ import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 import org.kiama.rewriting.PositionalRewriter._
 
 
-class Typer(val messaging: Messaging) {
+class Typer(messaging: Messaging) {
 
   import messaging.message
 
@@ -64,6 +64,13 @@ class Typer(val messaging: Messaging) {
         if (a.collection.schema != b.collection.schema)
           message(notin, s"notin called with incompatible schemas:\n${a.collection.schema}\n${b.collection.schema}")
         a.collection.schema
+      case choose @ ChooseCollection(collection, groupingCols, funcCall) =>
+        if (groupingCols.map(_.field).toSet.size != groupingCols.size)
+          message(choose, "Grouping columns cannot contain duplicates")
+        val funcType = funcCall.functionRef.function.typ
+        if (Unifier.unify(funcType, FunctionTypes.exemplaryAggregate).isFailure)
+          message(choose, s"choose expected exemplary aggregate, but found function of type $funcType")
+        collection.collection.schema
     }
 
   lazy val isWellTyped: Statement => Boolean =

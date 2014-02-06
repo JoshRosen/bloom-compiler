@@ -5,7 +5,7 @@ case class FunctionType(argumentTypes: List[BloomType], returnType: BloomType, p
 
 
 object FunctionTypes {
-  val exemplaryAggregate = {
+  def exemplaryAggregate = {
     val T = new TypeParameter("T")
     FunctionType(List(T, T), T, FunctionProperties.SemilatticeMerge)
   }

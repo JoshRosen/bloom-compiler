@@ -44,10 +44,13 @@ trait BudParser extends PositionedParserUtilities {
       FreeFieldRef(collection, field)
   }
 
+  lazy val functionCall = ident ~ "(" ~ repsep(colExpr, ",") ~ ")" ^^ {
+    case name ~ "(" ~ args ~ ")" => FunctionCall(FreeFunctionRef(name), args)
+  }
   lazy val colTerm = fieldRef
   lazy val colExpr: Parser[ColExpr] = {
     def plus = colTerm ~ "+" ~ colExpr ^^ {case a ~ "+" ~ b => PlusStatement(a, b, UnknownType())}
-    plus | colTerm
+    plus | functionCall | colTerm
   }
   lazy val rowExpr: Parser[RowExpr] = listOf(colExpr) ^^ RowExpr
   lazy val predicate = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
@@ -57,7 +60,7 @@ trait BudParser extends PositionedParserUtilities {
     lazy val rhs = collectionMap | derivedCollection | collectionRef
 
     lazy val collection = collectionRef | derivedCollection
-    lazy val derivedCollection = join | notin
+    lazy val derivedCollection = join | notin | choose
 
     // i.e. (link * path) on (link.to == path.from)
     lazy val join = "(" ~ collectionRef ~ "*" ~ collectionRef ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ^^ {
@@ -71,8 +74,14 @@ trait BudParser extends PositionedParserUtilities {
 
     lazy val collectionMap = collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ rowExpr <~ "}" ^^ {
       case collection ~ tupleVars ~ rowExpr =>
-        new MappedCollection(collection, tupleVars, rowExpr)
+        MappedCollection(collection, tupleVars, rowExpr)
     }
+
+    lazy val choose = collectionRef ~ "." ~ "choose" ~ "(" ~ listOf(fieldRef) ~ "," ~ functionCall ~ ")" ^^ {
+      case collection ~ "." ~ "choose" ~ "(" ~ groupingCols ~ "," ~ func ~ ")" =>
+        ChooseCollection(collection, groupingCols, func)
+    }
+
     lhs ~ bloomOp ~ rhs ^^ { case l ~ o ~ r => Statement(l, o, r)}
   }
 

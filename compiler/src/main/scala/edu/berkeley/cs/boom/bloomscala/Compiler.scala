@@ -25,7 +25,6 @@ class CompilerArgs extends FieldArgs {
 object Compiler extends Logging with ArgMain[CompilerArgs] {
 
   def nameAndType(src: CharSequence)(implicit messaging: Messaging): Program = {
-    messaging.resetmessages()
     try {
       val parseResults = BudParser.parseProgram(src)
       val named = new Namer(messaging).resolveNames(parseResults)
@@ -35,8 +34,8 @@ object Compiler extends Logging with ArgMain[CompilerArgs] {
       logger.error("Compilation failed", e)
       throw e
     } finally {
-      messaging.report()
       if (messaging.messagecount != 0) {
+        messaging.report()
         // TODO: this is fine for now for simple tests, but in the future
         // `compile` should return more detailed information for consumption
         // by unit tests
