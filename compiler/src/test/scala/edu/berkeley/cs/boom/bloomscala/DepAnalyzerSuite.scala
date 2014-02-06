@@ -1,6 +1,6 @@
 package edu.berkeley.cs.boom.bloomscala
 
-import edu.berkeley.cs.boom.bloomscala.analysis.DepAnalyzer
+import edu.berkeley.cs.boom.bloomscala.analysis.{Dependency, DepAnalyzer}
 
 class DepAnalyzerSuite extends BloomScalaSuite {
 
@@ -91,6 +91,22 @@ class DepAnalyzerSuite extends BloomScalaSuite {
     import depAnalyzer._
     assert(participatesInDeductiveCycle(program.statements.toSeq(0)))
     assert(participatesInDeductiveCycle(program.statements.toSeq(1)))
+  }
+
+  test("Non-monotonic dependencies") {
+    val program = Compiler.compileToIntermediateForm(
+      """
+        |     table a, [key: int, val: int]
+        |     table b, [ley: int, val: int]
+        |     b <= a.choose([a.key], min(a.val))
+      """.stripMargin
+    )
+    val depAnalyzer = new DepAnalyzer(program)
+    import depAnalyzer._
+    val statementDeps = program.statements.head->statementDependencies
+    assert(statementDeps.exists { case Dependency(collection, isNegated, isTemporal, isMonotonic, _) =>
+     collection.name == "a" && !isMonotonic
+    })
   }
 
 }

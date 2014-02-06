@@ -42,8 +42,8 @@ class Stratifier(depAnalyzer: DepAnalyzer)(implicit messaging: Messaging) {
     circular(Stratum(0)) { collection =>
       val stmts = collection->collectionStatements
       val nonTemporalDeps = stmts.flatMap(statementDependencies).filterNot(_.isTemporal)
-      val depStrata = nonTemporalDeps.map { case Dependency(col, isNegated, _, _) =>
-        collectionStratum(col) +  (if (isNegated) 1 else 0)
+      val depStrata = nonTemporalDeps.map { case Dependency(col, isNegated, _, isMonotonic, _) =>
+        collectionStratum(col) + (if (isNegated) 1 else 0) + (if (!isMonotonic) 1 else 0)
       }
       (depStrata ++ Set(Stratum(0))).max
     }

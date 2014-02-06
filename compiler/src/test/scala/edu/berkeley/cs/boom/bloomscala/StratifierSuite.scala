@@ -65,10 +65,9 @@ class StratifierSuite extends BloomScalaSuite {
     import stratifier._
     assert(program->isTemporallyStratifiable)
     val strata = getCollectionStrata(program)
-    assert(strata("a") === Stratum(0))
-    assert(strata("b") === Stratum(0))
-    assert(strata("c") === Stratum(1))
-    assert(getRuleStrata(program).head === Stratum(1))
+    assert(strata("a") === strata("b"))
+    assert(strata("c") > strata("b"))
+    assert(getRuleStrata(program).head === strata("c"))
   }
 
   test("Cycles with temporal negation should still be stratifiable") {
@@ -99,5 +98,23 @@ class StratifierSuite extends BloomScalaSuite {
         |       b <= a
         |       a <= b
       """.stripMargin))
+  }
+
+  test("Dependencies used in non-monotonic contexts are evaluated in lower strata") {
+    val program = Compiler.compileToIntermediateForm(
+      """
+        |     table a, [key: int, val: int]
+        |     table b, [ley: int, val: int]
+        |     b <= a.choose([a.key], min(a.val))
+      """.stripMargin
+    )
+    val depAnalyzer = new DepAnalyzer(program)
+    val stratifier = new Stratifier(depAnalyzer)
+    import stratifier._
+    assert(program->isTemporallyStratifiable)
+    val strata = getCollectionStrata(program)
+    assert(strata("a") === Stratum(0))
+    assert(strata("b") === Stratum(1))
+    assert(getRuleStrata(program).head === Stratum(1))
   }
 }

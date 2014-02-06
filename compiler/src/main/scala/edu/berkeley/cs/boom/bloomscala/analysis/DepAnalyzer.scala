@@ -7,6 +7,7 @@ import org.kiama.attribution.Attributable
 case class Dependency(dependency: CollectionDeclaration,
                       isNegated: Boolean,
                       isTemporal: Boolean,
+                      isMonotonic: Boolean,
                       stmt: Statement)
 
 class DepAnalyzer(program: Program) {
@@ -40,20 +41,22 @@ class DepAnalyzer(program: Program) {
     attr {
       case stmt @ Statement(lhs, op, rhs, _) =>
         val isTemporal = stmt.op != BloomOp.<=
-        for ((collection, isNegated) <- annotatedDependencies(rhs)) yield {
-          Dependency(collection, isNegated, isTemporal, stmt)
+        for ((collection, isNegated, isMonotonic) <- annotatedDependencies(rhs)) yield {
+          Dependency(collection, isNegated, isTemporal, isMonotonic, stmt)
         }
     }
 
   /**
    * Helper attribute that annotates referenced collections based on whether the reference
-   * is through negation.
+   * is through negation or appears in a non-monotonic position.
    */
-  lazy val annotatedDependencies: Attributable => Traversable[(CollectionDeclaration, Boolean)] =
+  lazy val annotatedDependencies: Attributable => Traversable[(CollectionDeclaration, Boolean, Boolean)] =
+    // TODO: refactor the return type to use case classes instead of tuples.
     attr {
       case mc: MappedCollection => mc.rowExpr.cols.flatMap(annotatedDependencies)
-      case NotIn(a, b) => Seq((a.collection, false), (b.collection, true))
-      case cr: CollectionRef => Seq((cr.collection, false))
+      case NotIn(a, b) => Seq((a.collection, false, true), (b.collection, true, false))
+      case cr: CollectionRef => Seq((cr.collection, false, true))
+      case ChooseCollection(cr, _, _) => Seq((cr.collection, false, false))
       case a: Attributable => a.children.flatMap(annotatedDependencies).toTraversable
     }
 
