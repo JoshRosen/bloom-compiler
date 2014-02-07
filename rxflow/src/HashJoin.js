@@ -2,6 +2,7 @@ var Rx = require('rx');
 
 
 function HashJoin(leftKeyFunc, rightKeyFunc, buildInput) {
+    'use strict';
     this.leftInput = new Rx.Subject();
     this.rightInput = new Rx.Subject();
     var _hashTable = {};
@@ -11,20 +12,20 @@ function HashJoin(leftKeyFunc, rightKeyFunc, buildInput) {
     var _probeKeyFunc;
     var _resultOrderingFunction;
 
-    if (buildInput == "left") {
+    if (buildInput === "left") {
         _buildInput = this.leftInput;
         _probeInput = this.rightInput;
         _buildKeyFunc = leftKeyFunc;
         _probeKeyFunc = rightKeyFunc;
         _resultOrderingFunction = function (b, p) {  return [b, p]; };
-    } else if (buildInput == "right") {
+    } else if (buildInput === "right") {
         _buildInput = this.rightInput;
         _probeInput = this.leftInput;
         _buildKeyFunc = rightKeyFunc;
         _probeKeyFunc = leftKeyFunc;
         _resultOrderingFunction = function (b, p) {  return [p, b]; };
     } else {
-        throw new Error("buildInput should be 'left' or 'right', not '" + buildInput + "'")
+        throw new Error("buildInput should be 'left' or 'right', not '" + buildInput + "'");
     }
 
     _buildInput.subscribe(function (b) {
@@ -49,4 +50,4 @@ function HashJoin(leftKeyFunc, rightKeyFunc, buildInput) {
     });
 }
 
-module.exports = HashJoin
+module.exports = HashJoin;

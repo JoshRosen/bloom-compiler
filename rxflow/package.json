@@ -1,15 +1,25 @@
 {
-    "private": true,
-    "name": "rxflow",
-    "version": "0.0.1",
-    "main": "index.js",
-    "dependencies": {
-        "rx": "2.2.13"
-    },
-    "devDependencies": {
-        "vows": "0.7.0"
-    },
-    "scripts": {
-        "test": "./node_modules/vows/bin/vows"
-    }
+  "name": "rxflow",
+  "description": "Dataflow implementation on top of RxJs",
+  "version": "0.1.0",
+  "author": {
+    "name": "Josh Rosen",
+    "email": "joshrosen@eecs.berkeley.edu"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt vows"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.6.4",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt": "~0.4.2",
+    "grunt-vows": "~0.4.0"
+  },
+  "keywords": [],
+  "dependencies": {
+    "rx": "~2.2.13"
+  }
 }

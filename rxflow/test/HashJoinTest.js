@@ -4,6 +4,7 @@ var vows = require('vows'),
 
 vows.describe('HashJoin').addBatch({
     'Test HashJoin': function () {
+        'use strict';
         var join = new rxflow.HashJoin(
             function(x) { return x[1]; },
             function(x) { return x[0]; },
