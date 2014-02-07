@@ -35,12 +35,22 @@ module.exports = function(grunt) {
         tasks: ['jshint:test', 'vows']
       },
     },
+    benchmark: {
+      options: {
+        displayResults: true
+      },
+      all: {
+        src: ['benchmark/*.js'],
+        dest: 'benchmark/results.csv'
+      },
+    },
   });
 
   // These plugins provide necessary tasks.
+  grunt.loadNpmTasks('grunt-benchmark');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
-	grunt.loadNpmTasks("grunt-vows");
+  grunt.loadNpmTasks("grunt-vows");
 
   // Default task.
   grunt.registerTask('default', ['jshint', 'vows']);

@@ -16,7 +16,9 @@
     "grunt-contrib-jshint": "~0.6.4",
     "grunt-contrib-watch": "~0.5.3",
     "grunt": "~0.4.2",
-    "grunt-vows": "~0.4.0"
+    "grunt-vows": "~0.4.0",
+    "grunt-benchmark": "~0.2.0",
+    "benchmark": "~1.0.0"
   },
   "keywords": [],
   "dependencies": {
