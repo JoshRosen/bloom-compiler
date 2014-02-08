@@ -21,6 +21,14 @@ module.exports = function(grunt) {
         src: ['test/**/*.js']
       },
     },
+    jsdoc: {
+      dist: {
+        src: ['src/**/*.js'],
+        options: {
+          destination: 'doc'
+        }
+      }
+    },
     watch: {
       gruntfile: {
         files: '<%= jshint.gruntfile.src %>',
@@ -51,6 +59,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks("grunt-vows");
+  grunt.loadNpmTasks("grunt-jsdoc");
 
   // Default task.
   grunt.registerTask('default', ['jshint', 'vows']);
