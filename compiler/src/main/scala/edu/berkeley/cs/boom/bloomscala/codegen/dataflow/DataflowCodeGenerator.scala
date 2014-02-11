@@ -27,14 +27,14 @@ trait DataflowCodeGenerator extends CodeGenerator {
     implicit val g = graph
     implicit val s = stratum
     stmt match { case Statement(lhs, op, rhs, number) =>
-      // First, create the dataflow elements to produce the RHS.
-      val rhsOutputs: Set[DataflowElement] = rhs match {
+      // Create the dataflow element that produces the RHS and return its OutputPort:
+      val rhsOutput: OutputPort = rhs match {
         case cr: CollectionRef =>
-          Set(graph.tables(cr.collection))
+          graph.tables(cr.collection).scanner.output
         case MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
           val mapElem = MapElement(rowExpr, 1)
-          mapElem.input <-> graph.tables(cr.collection).deltaOut
-          Set(mapElem)
+          mapElem.input <-> graph.tables(cr.collection).scanner.output
+          mapElem.output
         case MappedEquijoin(a, b, aExpr, bExpr, tupVars, rowExpr) =>
           // We can implement this using a pair of stateful hash join operators,
           // one for each delta.
@@ -42,33 +42,33 @@ trait DataflowCodeGenerator extends CodeGenerator {
           val bTable = graph.tables(b.collection)
           val aDelta = new HashEquiJoinElement(aExpr, bExpr, true)
           val bDelta = new HashEquiJoinElement(aExpr, bExpr, false)
-          aDelta.leftInput <-> aTable.deltaOut
-          aDelta.rightInput <-> bTable.deltaOut
-          bDelta.leftInput <-> aTable.deltaOut
-          bDelta.rightInput <-> bTable.deltaOut
+          aDelta.leftInput <-> aTable.scanner.output
+          aDelta.rightInput <-> bTable.scanner.output
+          bDelta.leftInput <-> aTable.scanner.output
+          bDelta.rightInput <-> bTable.scanner.output
           val project = MapElement(rowExpr, 2)
-          project.input <-> aDelta.deltaOut
-          project.input <-> bDelta.deltaOut
-          Set(project)
+          project.input <-> aDelta.output
+          project.input <-> bDelta.output
+          project.output
         case NotIn(a, b) =>
           val aTable = graph.tables(a.collection)
           val bTable = graph.tables(b.collection)
           val notin = new NotInElement()
-          notin.probeInput <-> aTable.deltaOut
-          notin.tableInput <-> bTable.deltaOut
-          Set(notin)
+          notin.probeInput <-> aTable.scanner.output
+          notin.tableInput <-> bTable.scanner.output
+          notin.output
       }
-      // Wire the final element's outputs to their targets, with the connection type
+      // Wire the RHS's output to the LHS, with the connection type
       // dependent on the type of Bloom operator (<= vs <+ or <-):
       val lhsTable: Table = graph.tables(lhs.collection)
       import BloomOp._
       op match {
         case InstantaneousMerge =>
-          rhsOutputs.foreach { elem => elem.deltaOut <-> lhsTable.deltaIn}
+          rhsOutput <-> lhsTable.deltaIn
         case DeferredMerge =>
-          rhsOutputs.foreach { elem => elem.deltaOut <-> lhsTable.pendingIn}
+          rhsOutput <-> lhsTable.pendingIn
         case Delete =>
-          rhsOutputs.foreach { elem => elem.deleteOut <-> lhsTable.deleteIn}
+          rhsOutput <-> lhsTable.deleteIn
       }
 
     }

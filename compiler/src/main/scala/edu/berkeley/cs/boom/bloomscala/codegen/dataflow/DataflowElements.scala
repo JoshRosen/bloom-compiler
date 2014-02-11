@@ -22,6 +22,7 @@ class DataflowGraph(stratifier: Stratifier) {
 }
 
 case class InputPort(elem: DataflowElement, name: String) {
+  elem.inputPorts += this
   val connectedPorts = mutable.HashSet[OutputPort]()
   def <->(outputPort: OutputPort) {
     outputPort.connectedPorts += this
@@ -30,6 +31,7 @@ case class InputPort(elem: DataflowElement, name: String) {
 }
 
 case class OutputPort(elem: DataflowElement, name: String) {
+  elem.outputPorts += this
   val connectedPorts = mutable.HashSet[InputPort]()
   def <->(inputPort: InputPort) {
     inputPort.connectedPorts += this
@@ -44,23 +46,26 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
   /** A unique identifier for this dataflow element */
   val id = graph.nextElementId.getAndIncrement
 
+  val inputPorts = mutable.HashSet[InputPort]()
+  val outputPorts = mutable.HashSet[OutputPort]()
+
   // This statement needs to be AFTER we assign the id so that hashCode()
   // and equals() return the right results when we add this element to the
   // hashSet:
   graph.elements += this
 
-  /** Insertions produced by this operator */
-  val deltaOut = OutputPort(this, "deltaOut")
-  /* Deletions produced by this operator */
-  val deleteOut = OutputPort(this, "deleteOut")
-
   override def equals(other: Any): Boolean = other match {
     case that: DataflowElement => id == that.id
     case _ => false
-  }
+  }                 
 
   override def hashCode(): Int = id
 }
+
+/**
+ * Mixin trait to mark dataflow elements as Stateful.
+ */
+trait Stateful
 
 case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   /** Sources of new tuples to process in the current tick */
@@ -80,15 +85,24 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
   }
 
   override def hashCode(): Int = collection.hashCode()
+
+  val scanner = new Scanner(this)
+}
+
+case class Scanner(table: Table)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+  val output = OutputPort(this, "output")
 }
 
 case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val input = InputPort(this, "input")
+  val output = OutputPort(this, "output")
 }
 
-case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)
+                              (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
   val leftInput = InputPort(this, "leftInput")
   val rightInput = InputPort(this, "rightInput")
+  val output = OutputPort(this, "output")
 }
 
 // TODO: might want to have more general "anti-join" and outer-join elements;
@@ -96,4 +110,5 @@ case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild:
 case class NotInElement()(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val probeInput = InputPort(this, "probeInput")
   val tableInput = InputPort(this, "tableInput")
+  val output = OutputPort(this, "output")
 }

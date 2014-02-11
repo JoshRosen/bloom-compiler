@@ -81,8 +81,9 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
         case elem => elemName(elem)
       }
       val elementWiring = allElements.flatMap {
-        elem => elem.deltaOut.connectedPorts.map {
-          inputPort => portName(elem.deltaOut) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
+        elem => elem.outputPorts.flatMap { outputPort => outputPort.connectedPorts.map {
+            inputPort => portName(outputPort) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
+          }
         }
       }
       elementCreation ++ elementWiring

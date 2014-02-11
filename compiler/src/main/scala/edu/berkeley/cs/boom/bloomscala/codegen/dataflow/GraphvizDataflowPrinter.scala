@@ -13,19 +13,19 @@ import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
  */
 object GraphvizDataflowPrinter extends DataflowCodeGenerator {
 
-  private def label(elem: DataflowElement): String = {
+  private def label(elem: DataflowElementBase): String = {
     elem match {
       case Table(collection) =>
         collection.name
-      case e: DataflowElement =>
+      case e: DataflowElementBase =>
         e.getClass.getSimpleName
     }
   }
 
-  private def shape(elem: DataflowElement): String = {
+  private def shape(elem: DataflowElementBase): String = {
     elem match {
       case t: Table => "rectangle"
-      case e: DataflowElement => "ellipse"
+      case e: DataflowElementBase => "ellipse"
     }
   }
 
@@ -69,14 +69,12 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator {
         if (t.hasInputs) {
           stratumStatements += text(s"""sink${t.id} [label="${label(t)}",shape="${shape(t)}"];""")
         }
-        processPort(t.deltaOut)
-        processPort(t.deleteOut)
+        t.outputPorts.foreach(processPort)
       }
 
       nonTables.foreach { e =>
         stratumStatements += text(s"""${e.id} [label="${label(e)}",shape="${shape(e)}"];""")
-        processPort(e.deltaOut)
-        processPort(e.deleteOut)
+        e.outputPorts.foreach(processPort)
       }
     }
 
