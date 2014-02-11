@@ -49,6 +49,9 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
   val inputPorts = mutable.HashSet[InputPort]()
   val outputPorts = mutable.HashSet[OutputPort]()
 
+  def upstreamElements = inputPorts.flatMap(ip => ip.connectedPorts.map(op => op.elem)).toSet
+  def downstreamElements = outputPorts.flatMap(op => op.connectedPorts.map(ip => ip.elem)).toSet
+
   // This statement needs to be AFTER we assign the id so that hashCode()
   // and equals() return the right results when we add this element to the
   // hashSet:
@@ -63,9 +66,17 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
 }
 
 /**
- * Mixin trait to mark dataflow elements as Stateful.
+ * Mixin trait for dataflow elements that maintain internal state
+ * that must be invalidated if any of their inputs perform rescans.
  */
 trait Stateful
+
+/**
+ * Mixin trait for stateful dataflow elements that can perform
+ * rescans out of their caches rather than having to rescan
+ * their inputs.
+ */
+trait Rescanable extends Stateful
 
 case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   /** Sources of new tuples to process in the current tick */
@@ -100,6 +111,13 @@ case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: Data
 
 case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)
                               (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
+  val leftInput = InputPort(this, "leftInput")
+  val rightInput = InputPort(this, "rightInput")
+  val output = OutputPort(this, "output")
+}
+
+case class SymmetricHashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr)
+                                       (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Rescanable {
   val leftInput = InputPort(this, "leftInput")
   val rightInput = InputPort(this, "rightInput")
   val output = OutputPort(this, "output")
