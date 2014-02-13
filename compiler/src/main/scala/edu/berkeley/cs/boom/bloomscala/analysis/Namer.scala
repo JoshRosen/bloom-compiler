@@ -80,8 +80,7 @@ class Namer(messaging: Messaging) {
 
   private lazy val tupleVarBindingTargets: MappedCollectionTarget => Seq[CollectionRef] =
     attr {
-      case MappedEquijoin(a, b, _, _, _, _) => Seq(a, b)
-      case JoinedCollection(a, b, _) => Seq(a, b)
+      case JoinedCollections(collections, _, _, _) => collections.toSeq
       case cr: CollectionRef => Seq(cr)
     }
 
@@ -94,9 +93,9 @@ class Namer(messaging: Messaging) {
   private lazy val lookupTupleVar: String => Attributable => (CollectionDeclaration, Int) =
     paramAttr {
       name => {
-        case mej @ MappedEquijoin(a, b, _, _, tupleVars, _) =>
-          val targets = tupleVarBindingTargets(mej)
-          checkTupleVarCount(targets.size, tupleVars, mej)
+        case join @ JoinedCollections(_, _, tupleVars, _) =>
+          val targets = tupleVarBindingTargets(join)
+          checkTupleVarCount(targets.size, tupleVars, join)
           val lambdaArgNumber = tupleVars.indexOf(name)
           if (lambdaArgNumber == -1) {
             (new MissingDeclaration, -1)

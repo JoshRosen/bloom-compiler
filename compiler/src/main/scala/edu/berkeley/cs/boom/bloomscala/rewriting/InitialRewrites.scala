@@ -11,12 +11,6 @@ object InitialRewrites {
 
   private val nextStatementNumber = new AtomicInteger(0)
 
-  private val joinMapConsolidation =
-    rule {
-      case MappedCollection(JoinedCollection(a, b, EqualityPredicate(aExpr, bExpr)), tupleVars, rowExpr) =>
-        MappedEquijoin(a, b, aExpr, bExpr, tupleVars, rowExpr)
-    }
-
   private val collectionRefToTupleVar =
     rule {
       case FreeCollectionRef(name) => FreeTupleVariable(name)
@@ -36,16 +30,18 @@ object InitialRewrites {
    */
   private val labelTupleVars =
     rule {
-      case MappedCollection(target, tupleVars, colExprs) =>
+      case JoinedCollections(collections, predicate, tupleVars, rowExpr) =>
+        JoinedCollections(collections, predicate, tupleVars,
+          rewrite(everywherebu(collectionRefToTupleVar))(rowExpr) )
+      case MappedCollection(target, tupleVars, rowExpr) =>
         MappedCollection(target, tupleVars,
-          rewrite(everywherebu(collectionRefToTupleVar))(colExprs))
+          rewrite(everywherebu(collectionRefToTupleVar))(rowExpr))
     }
 
   def apply(program: Program): Program = {
     val strategy =
       everywheretd(numberRules) <*
-      everywheretd(labelTupleVars) <*
-      everywheretd(joinMapConsolidation)
+      everywheretd(labelTupleVars)
     rewrite(strategy)(program)
   }
 }

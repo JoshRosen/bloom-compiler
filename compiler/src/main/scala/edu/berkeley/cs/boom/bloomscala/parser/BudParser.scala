@@ -53,7 +53,11 @@ trait BudParser extends PositionedParserUtilities {
     plus | functionCall | colTerm
   }
   lazy val rowExpr: Parser[RowExpr] = listOf(colExpr) ^^ RowExpr
-  lazy val predicate = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
+  lazy val predicate: Parser[Predicate] = {
+    lazy val eqPred = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
+    lazy val andPred = eqPred ~ "and" ~ predicate ^^ { case a ~ "and" ~ b => AndPredicate(a, b)}
+    andPred | eqPred
+  }
 
   lazy val statement = {
     lazy val lhs = collectionRef
@@ -63,18 +67,22 @@ trait BudParser extends PositionedParserUtilities {
     lazy val derivedCollection = join | notin | choose
 
     // i.e. (link * path) on (link.to == path.from)
-    lazy val join = "(" ~ collectionRef ~ "*" ~ collectionRef ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ^^ {
-      case "(" ~ a ~ "*" ~ b ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" =>
-        JoinedCollection(a, b, predicate)
+    lazy val join = "(" ~ rep1sep(collectionRef, "*") ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ~ mapBlock ^^ {
+      case "(" ~ collections ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ~ tupleVarsRowExpr =>
+        JoinedCollections(collections, predicate, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
     }
 
     lazy val notin = collectionRef ~ "." ~ "notin" ~ "(" ~ collectionRef ~")" ^^ {
       case a ~ "." ~ "notin" ~ "(" ~ b ~ ")" => new NotIn(a, b)
     }
 
-    lazy val collectionMap = collection ~ ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ rowExpr <~ "}" ^^ {
-      case collection ~ tupleVars ~ rowExpr =>
-        MappedCollection(collection, tupleVars, rowExpr)
+    lazy val mapBlock = ("{" ~> "|" ~> rep1sep(ident, ",") <~ "|") ~ rowExpr <~ "}" ^^ {
+      case tupleVars ~ rowExpr => (tupleVars, rowExpr)
+    }
+
+    lazy val collectionMap = collection ~ mapBlock ^^ {
+      case collection ~ tupleVarsRowExpr =>
+        MappedCollection(collection, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
     }
 
     lazy val choose = collectionRef ~ "." ~ "choose" ~ "(" ~ listOf(fieldRef) ~ "," ~ functionCall ~ ")" ^^ {

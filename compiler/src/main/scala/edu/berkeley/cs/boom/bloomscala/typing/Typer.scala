@@ -56,8 +56,8 @@ class Typer(messaging: Messaging) {
     attr {
       case mc: MappedCollection =>
         mc.rowExpr->rowType
-      case mej: MappedEquijoin =>
-        mej.rowExpr->rowType
+      case join: JoinedCollections =>
+        join.rowExpr->rowType
       case cr: CollectionRef =>
         cr.collection.schema
       case notin @ NotIn(a, b) =>

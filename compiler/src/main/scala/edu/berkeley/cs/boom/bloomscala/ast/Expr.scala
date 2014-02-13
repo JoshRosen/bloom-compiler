@@ -32,6 +32,7 @@ case class PlusStatement(lhs: ColExpr, rhs: ColExpr, override val typ: BloomType
 trait Predicate extends Node
 
 case class EqualityPredicate(a: ColExpr, b: ColExpr) extends Predicate
+case class AndPredicate(a: Predicate, b: Predicate) extends Predicate
 
 
 /************************** Functions ***********************************/

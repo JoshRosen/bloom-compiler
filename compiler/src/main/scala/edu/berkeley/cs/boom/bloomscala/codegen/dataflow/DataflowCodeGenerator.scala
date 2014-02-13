@@ -35,7 +35,7 @@ trait DataflowCodeGenerator extends CodeGenerator {
           val mapElem = MapElement(rowExpr, 1)
           mapElem.input <-> graph.tables(cr.collection).scanner.output
           mapElem.output
-        case MappedEquijoin(a, b, aExpr, bExpr, tupVars, rowExpr) =>
+        case JoinedCollections(List(a, b), EqualityPredicate(aExpr, bExpr), tupVars, rowExpr) =>
           // We can implement this using a pair of stateful hash join operators,
           // one for each delta.
           val aTable = graph.tables(a.collection)

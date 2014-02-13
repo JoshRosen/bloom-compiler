@@ -24,16 +24,10 @@ case class MappedCollection(collection: MappedCollectionTarget, tupleVars: List[
 
 case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
 
-
-case class JoinedCollection(a: CollectionRef, b: CollectionRef, predicate: Predicate)
-  extends DerivedCollection
-
-case class MappedEquijoin(a: CollectionRef,
-                          b: CollectionRef,
-                          aExpr: ColExpr,
-                          bExpr: ColExpr,
-                          tupleVars: List[String],
-                          rowExpr: RowExpr) extends DerivedCollection
+case class JoinedCollections(collections: List[CollectionRef],
+                             predicate: Predicate,
+                             tupleVars: List[String],
+                             rowExpr: RowExpr) extends DerivedCollection
 
 case class ChooseCollection(collection: CollectionRef,
                             groupingCols: List[FieldRef],
