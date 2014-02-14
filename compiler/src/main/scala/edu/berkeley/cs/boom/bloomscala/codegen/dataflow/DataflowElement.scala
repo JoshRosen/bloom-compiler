@@ -13,8 +13,8 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
   val inputPorts = mutable.HashSet[InputPort]()
   val outputPorts = mutable.HashSet[OutputPort]()
 
-  def upstreamElements = inputPorts.flatMap(ip => ip.connectedPorts.map(op => op.elem)).toSet
-  def downstreamElements = outputPorts.flatMap(op => op.connectedPorts.map(ip => ip.elem)).toSet
+  def upstreamElements = inputPorts.flatMap(ip => ip.connections.map(e => e.from.elem)).toSet
+  def downstreamElements = outputPorts.flatMap(op => op.connections.map(e => e.to.elem)).toSet
 
   // This statement needs to be AFTER we assign the id so that hashCode()
   // and equals() return the right results when we add this element to the

@@ -43,9 +43,9 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
       clusteredStatements(stratum) = stratumStatements
 
       def processPort(outPort: OutputPort) {
-        outPort.connectedPorts.foreach { inPort =>
-          val edgeCrossesStratum = inPort.elem.stratum != stratum
-          val edge = diEdge(outPort.elem.id, inPort.elem.id, "headlabel" -> inPort.name, "taillabel" -> outPort.name,
+        outPort.connections.foreach { case Edge(from, to) =>
+          val edgeCrossesStratum = to.elem.stratum != stratum
+          val edge = diEdge(from.elem.id, to.elem.id, "headlabel" -> to.name, "taillabel" -> outPort.name,
             "fontsize" -> "8", "arrowsize" -> "0.5")
           if (edgeCrossesStratum) {
             topLevelStatements += edge

@@ -13,7 +13,7 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
   val deleteIn = InputPort(this, "deletesIn")
 
   def hasInputs: Boolean = {
-    !Seq(deltaIn, pendingIn, deleteIn).flatMap(_.connectedPorts).isEmpty
+    !Seq(deltaIn, pendingIn, deleteIn).flatMap(_.connections).isEmpty
   }
 
   override def equals(other: Any): Boolean = other match {
