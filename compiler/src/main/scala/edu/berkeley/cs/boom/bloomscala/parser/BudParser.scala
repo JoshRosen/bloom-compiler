@@ -55,8 +55,7 @@ trait BudParser extends PositionedParserUtilities {
   lazy val rowExpr: Parser[RowExpr] = listOf(colExpr) ^^ RowExpr
   lazy val predicate: Parser[Predicate] = {
     lazy val eqPred = colExpr ~ "==" ~ colExpr ^^ { case a ~ "==" ~ b => EqualityPredicate(a, b)}
-    lazy val andPred = eqPred ~ "and" ~ predicate ^^ { case a ~ "and" ~ b => AndPredicate(a, b)}
-    andPred | eqPred
+    eqPred
   }
 
   lazy val statement = {
@@ -67,9 +66,9 @@ trait BudParser extends PositionedParserUtilities {
     lazy val derivedCollection = join | notin | choose
 
     // i.e. (link * path) on (link.to == path.from)
-    lazy val join = "(" ~ rep1sep(collectionRef, "*") ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ~ mapBlock ^^ {
-      case "(" ~ collections ~ ")" ~ "on" ~ "(" ~ predicate ~ ")" ~ tupleVarsRowExpr =>
-        JoinedCollections(collections, predicate, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
+    lazy val join = "(" ~ rep1sep(collectionRef, "*") ~ ")" ~ "on" ~ "(" ~ rep1sep(predicate, ",") ~ ")" ~ mapBlock ^^ {
+      case "(" ~ collections ~ ")" ~ "on" ~ "(" ~ predicates ~ ")" ~ tupleVarsRowExpr =>
+        JoinedCollections(collections, predicates, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
     }
 
     lazy val notin = collectionRef ~ "." ~ "notin" ~ "(" ~ collectionRef ~")" ^^ {

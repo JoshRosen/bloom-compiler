@@ -29,6 +29,15 @@ class DepAnalyzer(program: Program) {
       case n: Node => n.children.map(referencedCollections).foldLeft(Set.empty[CollectionDeclaration])(_.union(_))
     }
 
+  /**
+   * The collection columns referenced in this subtree.
+   */
+  lazy val referencedColumns: Attributable => Set[FieldRef] =
+    attr {
+      case fr: FieldRef => Set(fr)
+      case n: Node => n.children.map(referencedColumns).foldLeft(Set.empty[FieldRef])(_.union(_))
+    }
+
   lazy val dependentStatements: CollectionDeclaration => Set[Statement] =
     attr { cd =>
       program.statements.filter(referencedCollections(_).contains(cd)).toSet

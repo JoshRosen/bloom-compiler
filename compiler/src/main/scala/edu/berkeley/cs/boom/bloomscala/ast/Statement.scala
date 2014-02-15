@@ -25,7 +25,7 @@ case class MappedCollection(collection: MappedCollectionTarget, tupleVars: List[
 case class NotIn(a: CollectionRef, b: CollectionRef) extends DerivedCollection
 
 case class JoinedCollections(collections: List[CollectionRef],
-                             predicate: Predicate,
+                             predicate: List[Predicate],
                              tupleVars: List[String],
                              rowExpr: RowExpr) extends DerivedCollection
 

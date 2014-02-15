@@ -31,7 +31,7 @@ class TyperSuite extends BloomScalaSuite {
         | table a, [val: int]
         | table b, [val: int]
         | table c, [val: int]
-        | c <= (a * b * c) on (a.val == b.val and b.val == c.val) { |x, y, z| [x.val + y.val + z.val] }
+        | c <= (a * b * c) on (a.val == b.val, b.val == c.val) { |x, y, z| [x.val + y.val + z.val] }
       """.stripMargin)
   }
 }

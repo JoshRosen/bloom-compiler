@@ -78,7 +78,7 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
             else (0 to functionArity - 1).map(x => s"x[$x]").toList
           "var" <+> elemName(mapElem) <+> equal <+> "new" <+>
             methodCall("rxflow", "Map", genLambda(mapFunction, List("x"), Some(exprParameterNames))) <> semi
-        case elem => elemName(elem)
+        case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
       }
       val elementWiring = allElements.flatMap {
         elem => elem.outputPorts.flatMap { outputPort => outputPort.connections.map { case Edge(_, inputPort) =>

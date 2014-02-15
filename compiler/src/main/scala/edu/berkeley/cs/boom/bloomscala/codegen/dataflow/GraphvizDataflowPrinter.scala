@@ -3,6 +3,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 import scala.collection.mutable
 import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
 import edu.berkeley.cs.boom.bloomscala.util.GraphvizPrettyPrinter
+import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter
 
 
 /**
@@ -16,6 +17,10 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
         collection.name
       case Scanner(table) =>
         table.collection.name + " Scanner"
+      case map: MapElement =>
+        "Map:\\n" + BloomPrettyPrinter.pretty(map.mapFunction)
+      case StateModule(collection) =>
+        collection.name + " SteM"
       case e: DataflowElement =>
         e.getClass.getSimpleName
     }
@@ -24,6 +29,7 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
   private def shape(elem: DataflowElement): String = {
     elem match {
       case t: Table => "rectangle"
+      case stem: StateModule => "rectangle"
       case e: DataflowElement => "ellipse"
     }
   }
@@ -55,9 +61,23 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
         }
       }
 
+      def processStem(stem: StateModule) {
+        stem.connectedElements.foreach { case (elem, predicate) =>
+          val edgeCrossesStratum = elem.stratum != stratum
+          val edge = diEdge(stem.id, elem.id, "label" -> BloomPrettyPrinter.pretty(predicate),
+            "fontsize" -> "8", "arrowsize" -> "0.5")
+          if (edgeCrossesStratum) {
+            topLevelStatements += edge
+          } else {
+            stratumStatements += edge
+          }
+        }
+      }
+
       elements.foreach { e =>
         stratumStatements += node(e.id, "label" -> label(e), "shape" -> shape(e))
         e.outputPorts.foreach(processPort)
+        e.connectedStems.foreach(processStem)
       }
     }
 

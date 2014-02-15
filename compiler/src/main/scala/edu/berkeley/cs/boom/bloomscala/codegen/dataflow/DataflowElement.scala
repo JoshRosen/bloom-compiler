@@ -12,6 +12,7 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
 
   val inputPorts = mutable.HashSet[InputPort]()
   val outputPorts = mutable.HashSet[OutputPort]()
+  val connectedStems = mutable.HashSet[StateModule]()
 
   def upstreamElements = inputPorts.flatMap(ip => ip.connections.map(e => e.from.elem)).toSet
   def downstreamElements = outputPorts.flatMap(op => op.connections.map(e => e.to.elem)).toSet
