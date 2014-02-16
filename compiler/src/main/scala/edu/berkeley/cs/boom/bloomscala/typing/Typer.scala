@@ -64,10 +64,10 @@ class Typer(messaging: Messaging) {
         if (a.collection.schema != b.collection.schema)
           message(notin, s"notin called with incompatible schemas:\n${a.collection.schema}\n${b.collection.schema}")
         a.collection.schema
-      case choose @ ChooseCollection(collection, groupingCols, funcCall) =>
+      case choose @ ChooseCollection(collection, groupingCols, chooseExpr, funcRef) =>
         if (groupingCols.map(_.field).toSet.size != groupingCols.size)
           message(choose, "Grouping columns cannot contain duplicates")
-        val funcType = funcCall.functionRef.function.typ
+        val funcType = funcRef.function.typ
         if (Unifier.unify(funcType, FunctionTypes.exemplaryAggregate).isFailure)
           message(choose, s"choose expected exemplary aggregate, but found function of type $funcType")
         collection.collection.schema

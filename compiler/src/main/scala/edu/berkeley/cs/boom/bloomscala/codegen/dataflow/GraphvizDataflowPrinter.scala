@@ -1,9 +1,9 @@
 package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
+import edu.berkeley.cs.boom.bloomscala.util.GraphvizPrettyPrinter
+import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter.{pretty => bloomPretty}
 import scala.collection.mutable
 import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
-import edu.berkeley.cs.boom.bloomscala.util.GraphvizPrettyPrinter
-import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter
 
 
 /**
@@ -18,7 +18,10 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
       case Scanner(table) =>
         table.collection.name + " Scanner"
       case map: MapElement =>
-        "Map:\\n" + BloomPrettyPrinter.pretty(map.mapFunction)
+        "Map:\\n" + bloomPretty(map.mapFunction)
+      case ChooseElement(groupingCols, chooseExpr, func) =>
+        val grouping = "[" + groupingCols.map(x => bloomPretty(x)).mkString(", ") + "]"
+        s"Choose:\\n${bloomPretty(func)} by ${bloomPretty(chooseExpr)}\\ngrouped by $grouping"
       case StateModule(collection) =>
         collection.name + " SteM"
       case e: DataflowElement =>
@@ -64,7 +67,7 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
       def processStem(stem: StateModule) {
         stem.connectedElements.foreach { case (elem, predicate) =>
           val edgeCrossesStratum = elem.stratum != stratum
-          val edge = diEdge(stem.id, elem.id, "label" -> BloomPrettyPrinter.pretty(predicate),
+          val edge = diEdge(stem.id, elem.id, "label" -> bloomPretty(predicate),
             "fontsize" -> "8", "arrowsize" -> "0.5")
           if (edgeCrossesStratum) {
             topLevelStatements += edge

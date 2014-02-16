@@ -17,6 +17,10 @@ object BloomPrettyPrinter extends PrettyPrinter {
         toDoc(a) <+> equal <+> toDoc(b)
       case fr: FieldRef =>
         fr.collection.name <> dot <> fr.fieldName
+      case fc: FunctionCall =>
+        fc.functionRef.name <> parens(ssep(fc.arguments.map(toDoc), comma <> space))
+      case fr: FunctionRef =>
+        fr.name
       case node: Node => node.toString
     }
   }

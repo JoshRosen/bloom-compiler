@@ -84,9 +84,9 @@ trait BudParser extends PositionedParserUtilities {
         MappedCollection(collection, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
     }
 
-    lazy val choose = collectionRef ~ "." ~ "choose" ~ "(" ~ listOf(fieldRef) ~ "," ~ functionCall ~ ")" ^^ {
-      case collection ~ "." ~ "choose" ~ "(" ~ groupingCols ~ "," ~ func ~ ")" =>
-        ChooseCollection(collection, groupingCols, func)
+    lazy val choose = collectionRef ~ "." ~ "choose" ~ "(" ~ listOf(fieldRef) ~ "," ~ colExpr ~ "," ~ ident ~ ")" ^^ {
+      case collection ~ "." ~ "choose" ~ "(" ~ groupingCols ~ "," ~ chooseExpr ~ "," ~ func ~ ")" =>
+        ChooseCollection(collection, groupingCols, chooseExpr, FreeFunctionRef(func))
     }
 
     lhs ~ bloomOp ~ rhs ^^ { case l ~ o ~ r => Statement(l, o, r)}

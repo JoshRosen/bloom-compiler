@@ -1,6 +1,7 @@
 package edu.berkeley.cs.boom.bloomscala.ast
 
 import edu.berkeley.cs.boom.bloomscala.ast.BloomOp.BloomOp
+import edu.berkeley.cs.boom.bloomscala.typing.FunctionTypes
 
 case class Statement(
     lhs: CollectionRef,
@@ -29,6 +30,15 @@ case class JoinedCollections(collections: List[CollectionRef],
                              tupleVars: List[String],
                              rowExpr: RowExpr) extends DerivedCollection
 
+/**
+ * Implements GROUP BY with exemplary aggregates.
+ *
+ * @param collection the collection being aggregated
+ * @param groupingCols the grouping columns
+ * @param chooseExpr the expression that's used in the aggregation function
+ * @param func a function of type [[FunctionTypes.exemplaryAggregate]]
+ */
 case class ChooseCollection(collection: CollectionRef,
                             groupingCols: List[FieldRef],
-                            func: FunctionCall) extends DerivedCollection
+                            chooseExpr: ColExpr,
+                            func: FunctionRef) extends DerivedCollection

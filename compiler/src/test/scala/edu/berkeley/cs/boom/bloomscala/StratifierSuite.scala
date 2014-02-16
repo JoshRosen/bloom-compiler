@@ -105,7 +105,7 @@ class StratifierSuite extends BloomScalaSuite {
       """
         |     table a, [key: int, val: int]
         |     table b, [ley: int, val: int]
-        |     b <= a.choose([a.key], min(a.val))
+        |     b <= a.choose([a.key], a.val, min)
       """.stripMargin
     )
     val depAnalyzer = new DepAnalyzer(program)

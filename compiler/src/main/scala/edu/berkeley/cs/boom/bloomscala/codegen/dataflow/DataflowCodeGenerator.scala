@@ -55,6 +55,11 @@ trait DataflowCodeGenerator extends CodeGenerator {
           notin.probeInput <-> aTable.scanner.output
           notin.tableInput <-> bTable.scanner.output
           notin.output
+        case ChooseCollection(collection, groupingCols, chooseExpr, func) =>
+          val scanner = graph.tables(collection.collection).scanner
+          val choose = ChooseElement(groupingCols, chooseExpr, func)
+          scanner.output <-> choose.input
+          choose.output
       }
       // Wire the RHS's output to the LHS, with the connection type
       // dependent on the type of Bloom operator (<= vs <+ or <-):

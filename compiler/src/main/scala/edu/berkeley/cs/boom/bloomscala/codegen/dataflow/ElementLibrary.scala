@@ -35,6 +35,12 @@ case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: Data
   val output = OutputPort(this, "output")
 }
 
+case class ChooseElement(groupingCols: List[FieldRef], chooseExpr: ColExpr, function: FunctionRef)
+                        (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
+  val input = InputPort(this, "input")
+  val output = OutputPort(this, "output")
+}
+
 case class EddyJoin(predicates: List[Predicate])(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val output = OutputPort(this, "output")
 }
