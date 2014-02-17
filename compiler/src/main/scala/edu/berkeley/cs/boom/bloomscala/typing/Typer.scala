@@ -5,6 +5,7 @@ import org.kiama.util.Messaging
 import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 import org.kiama.rewriting.PositionalRewriter._
+import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter.pretty
 
 
 class Typer(messaging: Messaging) {
@@ -33,7 +34,7 @@ class Typer(messaging: Messaging) {
     }
 
   private def expectType(x: ColExpr, t: BloomType) {
-    if (x->colType != t) message(x, s"Expected $t but got ${x->colType}")
+    if (x->colType != t) message(x, s"Expected ${pretty(t)} but got ${pretty(x->colType)}")
   }
 
   private lazy val colType: ColExpr => BloomType =
@@ -62,14 +63,15 @@ class Typer(messaging: Messaging) {
         cr.collection.schema
       case notin @ NotIn(a, b) =>
         if (a.collection.schema != b.collection.schema)
-          message(notin, s"notin called with incompatible schemas:\n${a.collection.schema}\n${b.collection.schema}")
+          message(notin, s"notin called with incompatible schemas:\n${pretty(a.collection.schema)}\n${pretty(b.collection.schema)}")
         a.collection.schema
       case choose @ ChooseCollection(collection, groupingCols, chooseExpr, funcRef) =>
         if (groupingCols.map(_.field).toSet.size != groupingCols.size)
           message(choose, "Grouping columns cannot contain duplicates")
         val funcType = funcRef.function.typ
+        val funcName = funcRef.name
         if (Unifier.unify(funcType, FunctionTypes.exemplaryAggregate).isFailure)
-          message(choose, s"choose expected exemplary aggregate, but found function of type $funcType")
+          message(choose, s"expected partial order, but found function '$funcName' of type ${pretty(funcType)}")
         collection.collection.schema
     }
 
@@ -79,7 +81,7 @@ class Typer(messaging: Messaging) {
         val lSchema = lhs.collection.schema
         val rSchema = rhsSchema(rhs)
         if (rSchema != lSchema) {
-          message(stmt, s"RHS has wrong schema; expected $lSchema but got $rSchema")
+          message(stmt, s"RHS has wrong schema; expected ${pretty(lSchema)} but got ${pretty(rSchema)}")
           false
         } else {
           true

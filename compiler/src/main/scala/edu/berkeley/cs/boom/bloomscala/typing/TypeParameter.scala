@@ -11,6 +11,6 @@ package edu.berkeley.cs.boom.bloomscala.typing
  *
  * @param name name used in debug messages
  */
-class TypeParameter(name: String) extends BloomType {
+class TypeParameter(val name: String) extends BloomType {
   override def toString: String = s"TypeParameter($name)"
 }
