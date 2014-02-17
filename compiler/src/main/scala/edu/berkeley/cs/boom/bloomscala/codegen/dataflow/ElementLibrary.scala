@@ -35,7 +35,7 @@ case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: Data
   val output = OutputPort(this, "output")
 }
 
-case class ChooseElement(groupingCols: List[FieldRef], chooseExpr: ColExpr, function: FunctionRef)
+case class ArgMinElement(groupingCols: List[FieldRef], chooseExpr: Expr, function: FunctionRef)
                         (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
   val input = InputPort(this, "input")
   val output = OutputPort(this, "output")

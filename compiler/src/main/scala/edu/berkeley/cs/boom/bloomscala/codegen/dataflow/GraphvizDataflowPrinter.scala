@@ -19,9 +19,9 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
         table.collection.name + " Scanner"
       case map: MapElement =>
         "Map:\\n" + bloomPretty(map.mapFunction)
-      case ChooseElement(groupingCols, chooseExpr, func) =>
+      case ArgMinElement(groupingCols, chooseExpr, func) =>
         val grouping = "[" + groupingCols.map(x => bloomPretty(x)).mkString(", ") + "]"
-        s"Choose:\\n${bloomPretty(func)} by ${bloomPretty(chooseExpr)}\\ngrouped by $grouping"
+        s"ArgMin:\\n${bloomPretty(chooseExpr)} by ${bloomPretty(func)}\\ngrouped by $grouping"
       case StateModule(collection) =>
         collection.name + " SteM"
       case e: DataflowElement =>

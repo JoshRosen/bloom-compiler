@@ -1,6 +1,8 @@
 package edu.berkeley.cs.boom.bloomscala.stdlib
 
-import edu.berkeley.cs.boom.bloomscala.typing.{UnknownType, FunctionTypes, FunctionType}
+import edu.berkeley.cs.boom.bloomscala.typing._
+import edu.berkeley.cs.boom.bloomscala.typing.UnknownType
+import edu.berkeley.cs.boom.bloomscala.typing.FunctionType
 
 class BuiltInFunction(val name: String, val typ: FunctionType)
 
@@ -10,10 +12,10 @@ object UnresolvedFunction extends BuiltInFunction("unresolved", FunctionType(Lis
 /** Placeholder in function reference that couldn't be resolved, resulting in a compiler error */
 object UnknownFunction extends BuiltInFunction("unknown", FunctionType(List.empty, UnknownType(), Set.empty))
 
-object MinFunction extends BuiltInFunction("min", FunctionTypes.exemplaryAggregate)
+object IntOrder extends BuiltInFunction("intOrder", FunctionTypes.partialOrder(FieldType.BloomInt))
 
 object BuiltInFunctions {
   val nameToFunction: Map[String, BuiltInFunction] = Map(
-    "min" -> MinFunction
+    "intOrder" -> IntOrder
   )
 }

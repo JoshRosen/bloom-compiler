@@ -58,12 +58,14 @@ trait BudParser extends PositionedParserUtilities {
     eqPred
   }
 
+  lazy val expr: Parser[Expr] = colExpr | rowExpr
+
   lazy val statement = {
     lazy val lhs = collectionRef
     lazy val rhs = collectionMap | derivedCollection | collectionRef
 
     lazy val collection = collectionRef | derivedCollection
-    lazy val derivedCollection = join | notin | choose
+    lazy val derivedCollection = join | notin | argmin
 
     // i.e. (link * path) on (link.to == path.from)
     lazy val join = "(" ~ rep1sep(collectionRef, "*") ~ ")" ~ "on" ~ "(" ~ rep1sep(predicate, ",") ~ ")" ~ mapBlock ^^ {
@@ -84,9 +86,9 @@ trait BudParser extends PositionedParserUtilities {
         MappedCollection(collection, tupleVarsRowExpr._1, tupleVarsRowExpr._2)
     }
 
-    lazy val choose = collectionRef ~ "." ~ "choose" ~ "(" ~ listOf(fieldRef) ~ "," ~ colExpr ~ "," ~ ident ~ ")" ^^ {
-      case collection ~ "." ~ "choose" ~ "(" ~ groupingCols ~ "," ~ chooseExpr ~ "," ~ func ~ ")" =>
-        ChooseCollection(collection, groupingCols, chooseExpr, FreeFunctionRef(func))
+    lazy val argmin = collectionRef ~ "." ~ "argmin" ~ "(" ~ listOf(fieldRef) ~ "," ~ expr ~ "," ~ ident ~ ")" ^^ {
+      case collection ~ "." ~ "argmin" ~ "(" ~ groupingCols ~ "," ~ chooseExpr ~ "," ~ func ~ ")" =>
+        ArgMin(collection, groupingCols, chooseExpr, FreeFunctionRef(func))
     }
 
     lhs ~ bloomOp ~ rhs ^^ { case l ~ o ~ r => Statement(l, o, r)}

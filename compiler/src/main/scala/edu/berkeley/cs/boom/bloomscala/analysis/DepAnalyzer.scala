@@ -65,7 +65,7 @@ class DepAnalyzer(program: Program) {
       case mc: MappedCollection => mc.rowExpr.cols.flatMap(annotatedDependencies)
       case NotIn(a, b) => Seq((a.collection, false, true), (b.collection, true, false))
       case cr: CollectionRef => Seq((cr.collection, false, true))
-      case choose: ChooseCollection => Seq((choose.collection.collection, false, false))
+      case argmin: ArgMin => Seq((argmin.collection.collection, false, false))
       case a: Attributable => a.children.flatMap(annotatedDependencies).toTraversable
     }
 

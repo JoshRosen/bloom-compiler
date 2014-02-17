@@ -8,6 +8,8 @@ import edu.berkeley.cs.boom.bloomscala.typing.FunctionType
 
 class UnifierSuite extends FunSuite {
 
+  def newTP = new TypeParameter("T")
+
   test("basic types unify with themselves") {
     assert(Unifier.unify(BloomInt, BloomInt).isSuccess)
   }
@@ -16,18 +18,18 @@ class UnifierSuite extends FunSuite {
     assert(Unifier.unify(new TypeParameter("S"), new TypeParameter("T")).isSuccess)
   }
 
-  test("exemplaryAggregate unifies with itself") {
-    assert(Unifier.unify(FunctionTypes.exemplaryAggregate, FunctionTypes.exemplaryAggregate).isSuccess)
+  test("leastUpperBound unifies with itself") {
+    assert(Unifier.unify(FunctionTypes.leastUpperBound(newTP), FunctionTypes.leastUpperBound(newTP)).isSuccess)
   }
 
-  test("exemplaryAggregate unifies with intMin") {
+  test("leastUpperBound unifies with intMin") {
     def intMin = FunctionType(List(BloomInt, BloomInt), BloomInt, FunctionProperties.SemilatticeMerge)
-    assert(Unifier.unify(FunctionTypes.exemplaryAggregate, intMin).isSuccess)
+    assert(Unifier.unify(FunctionTypes.leastUpperBound(newTP), intMin).isSuccess)
   }
 
   test("functions cannot unify with primitives") {
-    assert(Unifier.unify(FunctionTypes.exemplaryAggregate, BloomString).isFailure)
-    assert(Unifier.unify(BloomString, FunctionTypes.exemplaryAggregate).isFailure)
+    assert(Unifier.unify(FunctionTypes.leastUpperBound(newTP), BloomString).isFailure)
+    assert(Unifier.unify(BloomString, FunctionTypes.leastUpperBound(newTP)).isFailure)
   }
 
   test("simple non-unifiable functions") {

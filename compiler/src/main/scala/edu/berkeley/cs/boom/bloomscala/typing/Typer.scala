@@ -65,13 +65,13 @@ class Typer(messaging: Messaging) {
         if (a.collection.schema != b.collection.schema)
           message(notin, s"notin called with incompatible schemas:\n${pretty(a.collection.schema)}\n${pretty(b.collection.schema)}")
         a.collection.schema
-      case choose @ ChooseCollection(collection, groupingCols, chooseExpr, funcRef) =>
+      case argmin @ ArgMin(collection, groupingCols, chooseExpr, funcRef) =>
         if (groupingCols.map(_.field).toSet.size != groupingCols.size)
-          message(choose, "Grouping columns cannot contain duplicates")
+          message(argmin, "Grouping columns cannot contain duplicates")
         val funcType = funcRef.function.typ
         val funcName = funcRef.name
-        if (Unifier.unify(funcType, FunctionTypes.exemplaryAggregate).isFailure)
-          message(choose, s"expected partial order, but found function '$funcName' of type ${pretty(funcType)}")
+        if (Unifier.unify(funcType, FunctionTypes.partialOrder(chooseExpr.typ)).isFailure)
+          message(argmin, s"expected partial order, but found function '$funcName' of type ${pretty(funcType)}")
         collection.collection.schema
     }
 

@@ -31,14 +31,14 @@ case class JoinedCollections(collections: List[CollectionRef],
                              rowExpr: RowExpr) extends DerivedCollection
 
 /**
- * Implements GROUP BY with exemplary aggregates.
+ * Implements argmin.
  *
  * @param collection the collection being aggregated
  * @param groupingCols the grouping columns
- * @param chooseExpr the expression that's used in the aggregation function
- * @param func a function of type [[FunctionTypes.exemplaryAggregate]]
+ * @param chooseExpr an expression returning a value that's compatible with the ordering function
+ * @param func a function that defines a partial ordering over `chooseExpr`'s type.
  */
-case class ChooseCollection(collection: CollectionRef,
-                            groupingCols: List[FieldRef],
-                            chooseExpr: ColExpr,
-                            func: FunctionRef) extends DerivedCollection
+case class ArgMin(collection: CollectionRef,
+                  groupingCols: List[FieldRef],
+                  chooseExpr: Expr,
+                  func: FunctionRef) extends DerivedCollection

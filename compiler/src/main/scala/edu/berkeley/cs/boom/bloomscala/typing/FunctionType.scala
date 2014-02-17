@@ -5,8 +5,14 @@ case class FunctionType(argumentTypes: List[BloomType], returnType: BloomType, p
 
 
 object FunctionTypes {
-  def exemplaryAggregate = {
-    val T = new TypeParameter("T")
+  def leastUpperBound(T: BloomType) = {
     FunctionType(List(T, T), T, FunctionProperties.SemilatticeMerge)
+  }
+
+  /**
+   * A relation <= that defines a partial ordering of a set.
+   */
+  def partialOrder(T: BloomType) = {
+    FunctionType(List(T, T), FieldType.BloomBoolean, FunctionProperties.PartialOrder)
   }
 }

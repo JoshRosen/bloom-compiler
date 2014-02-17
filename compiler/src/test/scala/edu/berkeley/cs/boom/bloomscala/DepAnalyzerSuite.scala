@@ -98,7 +98,7 @@ class DepAnalyzerSuite extends BloomScalaSuite {
       """
         |     table a, [key: int, val: int]
         |     table b, [ley: int, val: int]
-        |     b <= a.choose([a.key], a.val, min)
+        |     b <= a.argmin([a.key], a.val, intOrder)
       """.stripMargin
     )
     val depAnalyzer = new DepAnalyzer(program)

@@ -27,9 +27,11 @@ case class FieldType(typeName: String) extends BloomType
 object FieldType {
   val BloomInt = new FieldType("int")
   val BloomString = new FieldType("string")
+  val BloomBoolean = new FieldType("boolean")
   val nameToType: Map[String, FieldType] = Map(
     "int" -> BloomInt,
-    "string" -> BloomString
+    "string" -> BloomString,
+    "boolean" -> BloomBoolean
   )
 }
 
