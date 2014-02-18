@@ -13,9 +13,12 @@ object UnresolvedFunction extends BuiltInFunction("unresolved", FunctionType(Lis
 object UnknownFunction extends BuiltInFunction("unknown", FunctionType(List.empty, UnknownType(), Set.empty))
 
 object IntOrder extends BuiltInFunction("intOrder", FunctionTypes.partialOrder(FieldType.BloomInt))
+object StringOrder extends BuiltInFunction("stringOrder", FunctionTypes.partialOrder(FieldType.BloomString))
+
 
 object BuiltInFunctions {
   val nameToFunction: Map[String, BuiltInFunction] = Map(
-    "intOrder" -> IntOrder
+    "intOrder" -> IntOrder,
+    "stringOrder" -> StringOrder
   )
 }

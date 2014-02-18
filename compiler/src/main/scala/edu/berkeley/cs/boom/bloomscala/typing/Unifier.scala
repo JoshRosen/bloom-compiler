@@ -1,6 +1,9 @@
 package edu.berkeley.cs.boom.bloomscala.typing
 
 import scala.util.{Success, Failure, Try}
+import scalaz._
+import Scalaz._
+import scalaz.contrib.std.utilTry._
 import edu.berkeley.cs.boom.bloomscala.UnificationError
 
 
@@ -39,13 +42,16 @@ object Unifier {
               val bTypes = bArgTypes ++ List(bReturnType)
               if (aTypes.size != bTypes.size)
                 return Failure (new UnificationError("Cannot unify functions of different arities"))
-              val recursiveUnifiers = aTypes.zip(bTypes).map(x => unify(x._1, x._2, bindings).get).flatMap(_.toSeq).toSet
-              // Ensure that none of the bindings conflict:
-              val unifier = recursiveUnifiers.toMap
-              if (unifier.size != recursiveUnifiers.size)
-                Failure(new UnificationError("Unification failed"))
-              else
-                Success(unifier)
+              val recursiveUnifiers: Try[Set[(BloomType, BloomType)]] =
+                aTypes.zip(bTypes).map(x => unify(x._1, x._2, bindings)).sequence.map(_.flatMap(_.toSeq).toSet)
+              recursiveUnifiers.flatMap { recUnifiers =>
+                // Ensure that none of the bindings conflict:
+                val unifier = recUnifiers.toMap
+                if (unifier.size != recUnifiers.size)
+                  Failure(new UnificationError("Unification failed"))
+                else
+                  Success(unifier)
+              }
             case _ =>
               Failure(new UnificationError("Cannot unify functions with primitives"))
           }

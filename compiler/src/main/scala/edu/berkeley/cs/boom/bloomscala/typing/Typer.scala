@@ -71,7 +71,7 @@ class Typer(messaging: Messaging) {
         val funcType = funcRef.function.typ
         val funcName = funcRef.name
         if (Unifier.unify(funcType, FunctionTypes.partialOrder(chooseExpr.typ)).isFailure)
-          message(argmin, s"expected partial order, but found function '$funcName' of type ${pretty(funcType)}")
+          message(argmin, s"expected partial order over ${pretty(chooseExpr.typ)}, but found function '$funcName' of type ${pretty(funcType)}")
         collection.collection.schema
     }
 

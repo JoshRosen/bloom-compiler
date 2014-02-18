@@ -34,4 +34,14 @@ class TyperSuite extends BloomScalaSuite {
         | c <= (a * b * c) on (a.val == b.val, b.val == c.val) { |x, y, z| [x.val + y.val + z.val] }
       """.stripMargin)
   }
+
+  test("argmin ordering type must unify with ordering field type") {
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
+      """
+        | table a, [key: int, val: int]
+        | table b, [key: int, val: int]
+        | b <= a.argmin([a.key], a.val, stringOrder)
+      """.stripMargin)
+    }
+  }
 }
