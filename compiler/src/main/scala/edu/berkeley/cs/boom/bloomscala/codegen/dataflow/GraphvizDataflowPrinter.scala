@@ -22,8 +22,6 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
       case ArgMinElement(groupingCols, chooseExpr, func) =>
         val grouping = "[" + groupingCols.map(x => bloomPretty(x)).mkString(", ") + "]"
         s"ArgMin:\\n${bloomPretty(chooseExpr)} by ${bloomPretty(func)}\\ngrouped by $grouping"
-      case StateModule(collection) =>
-        collection.name + " SteM"
       case e: DataflowElement =>
         e.getClass.getSimpleName
     }
@@ -32,7 +30,6 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
   private def shape(elem: DataflowElement): String = {
     elem match {
       case t: Table => "rectangle"
-      case stem: StateModule => "rectangle"
       case e: DataflowElement => "ellipse"
     }
   }
@@ -64,23 +61,9 @@ object GraphvizDataflowPrinter extends DataflowCodeGenerator with GraphvizPretty
         }
       }
 
-      def processStem(stem: StateModule) {
-        stem.connectedElements.foreach { case (elem, predicate) =>
-          val edgeCrossesStratum = elem.stratum != stratum
-          val edge = diEdge(stem.id, elem.id, "label" -> bloomPretty(predicate),
-            "fontsize" -> "8", "arrowsize" -> "0.5")
-          if (edgeCrossesStratum) {
-            topLevelStatements += edge
-          } else {
-            stratumStatements += edge
-          }
-        }
-      }
-
       elements.foreach { e =>
         stratumStatements += node(e.id, "label" -> label(e), "shape" -> shape(e))
         e.outputPorts.foreach(processPort)
-        e.connectedStems.foreach(processStem)
       }
     }
 

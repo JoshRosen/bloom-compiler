@@ -3,7 +3,6 @@ package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 import edu.berkeley.cs.boom.bloomscala.codegen.CodeGenerator
 import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratum, DepAnalyzer, Stratifier}
-import org.kiama.attribution.Attribution
 
 /**
  * Base class for code generators targeting push-based dataflow systems.
@@ -36,17 +35,21 @@ trait DataflowCodeGenerator extends CodeGenerator {
           val mapElem = MapElement(rowExpr, 1)
           mapElem.input <-> graph.tables(cr.collection).scanner.output
           mapElem.output
-        case JoinedCollections(collections, predicates, tupVars, rowExpr) =>
-          val eddyJoin = EddyJoin(predicates)
-          predicates.foreach { predicate =>
-            Attribution.initTree(predicate)
-            val referencedColumns = depAnalyzer.referencedColumns(predicate)
-            referencedColumns.foreach { columnRef =>
-              graph.stems(columnRef.collection.collection) <-> (eddyJoin, predicate)
-            }
-          }
+        case JoinedCollections(List(a, b), List(EqualityPredicate(aExpr, bExpr)), tupVars, rowExpr) =>
+          // TODO: generalize for 3+ tables.
+          // We can implement this using a pair of stateful hash join operators,
+          // one for each delta.
+          val aTable = graph.tables(a.collection)
+          val bTable = graph.tables(b.collection)
+          val aDelta = new HashEquiJoinElement(aExpr, bExpr, true)
+          val bDelta = new HashEquiJoinElement(aExpr, bExpr, false)
+          aDelta.leftInput <-> aTable.scanner.output
+          aDelta.rightInput <-> bTable.scanner.output
+          bDelta.leftInput <-> aTable.scanner.output
+          bDelta.rightInput <-> bTable.scanner.output
           val project = MapElement(rowExpr, 2)
-          eddyJoin.output <-> project.input
+          project.input <-> aDelta.output
+          project.input <-> bDelta.output
           project.output
         case NotIn(a, b) =>
           val aTable = graph.tables(a.collection)

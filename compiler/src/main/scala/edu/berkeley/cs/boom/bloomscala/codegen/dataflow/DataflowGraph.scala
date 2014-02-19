@@ -18,13 +18,4 @@ class DataflowGraph(stratifier: Stratifier) {
       elements += table
       table
     }
-  val stems: mutable.Map[CollectionDeclaration, StateModule] =
-    mutable.HashMap[CollectionDeclaration, StateModule]().withDefault { decl =>
-      val table = tables(decl)
-      val stem = StateModule(decl)(this, stratifier.collectionStratum(decl))
-      stem.buildInput <-> table.scanner.output
-      stems(decl) = stem
-      elements += stem
-      stem
-    }
 }

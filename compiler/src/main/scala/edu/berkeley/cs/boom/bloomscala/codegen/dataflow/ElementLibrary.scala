@@ -41,10 +41,6 @@ case class ArgMinElement(groupingCols: List[FieldRef], chooseExpr: Expr, functio
   val output = OutputPort(this, "output")
 }
 
-case class EddyJoin(predicates: List[Predicate])(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
-  val output = OutputPort(this, "output")
-}
-
 case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)
                               (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
   val leftInput = InputPort(this, "leftInput")
