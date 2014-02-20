@@ -18,7 +18,7 @@ import edu.berkeley.cs.boom.bloomscala.typing.Typer
 class CompilerArgs extends FieldArgs {
   @Required
   var infile: File = null
-  var target: String = "RxJS"
+  var target: String = "RxFlow"
 }
 
 

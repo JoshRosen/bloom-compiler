@@ -26,6 +26,7 @@ object BloomScalaBuild extends Build {
     file("."),
     settings = buildSettings ++ Seq(
       run <<= run in Compile in compiler,
+      runMain <<= runMain in Compile in compiler,
       console <<= console in Compile in compiler)
   ) aggregate(compiler)
 
