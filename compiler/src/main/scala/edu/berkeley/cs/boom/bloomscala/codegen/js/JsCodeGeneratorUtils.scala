@@ -21,11 +21,20 @@ trait JsCodeGeneratorUtils extends PrettyPrinter {
 
   def functionCall(functionName: Doc, args: Doc*): Doc = {
     val argsSeq = immutable.Seq(args).flatten
-    functionName <> parens(group(nest(ssep(argsSeq, comma <> line))))
+    functionName <> group(parens(nest(linebreak <> ssep(argsSeq, comma <> line)) <> linebreak))
   }
 
   def comment(doc: Doc): Doc = {
     "/*" <+> doc <+> "*/"
+  }
+
+  def arrayLiteral(items: Traversable[Doc]): Doc = {
+    brackets(ssep(immutable.Seq(items.toSeq: _*), comma <> space))
+  }
+
+  def mapLiteral(map: Map[Doc, Doc]): Doc = {
+    val entries = map.toSeq.map { case (k, v) => k <> ":" <+> v}
+    braces(space <> group(nest(linebreak <> ssep(immutable.Seq(entries: _*), comma <> line)) <> line))
   }
 
   /**
@@ -53,7 +62,7 @@ trait JsCodeGeneratorUtils extends PrettyPrinter {
       case PlusStatement(a, b, _) =>
         genExpr(a, parameterNames) <+> plus <+> genExpr(b, parameterNames)
       case RowExpr(colExprs) =>
-        brackets(colExprs.map(genExpr(_, parameterNames)).reduce(_ <> comma <+> _))
+        arrayLiteral(colExprs.map(genExpr(_, parameterNames)))
     }
   }
 }

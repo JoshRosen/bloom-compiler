@@ -9,7 +9,7 @@ import edu.berkeley.cs.boom.bloomscala.typing._
  */
 object BloomPrettyPrinter extends PrettyPrinter {
 
-  def toDoc(typ: BloomType): Doc = {
+  implicit def toDoc(typ: BloomType): Doc = {
     typ match {
       case FunctionType(argTypes, returnType, properties) =>
           parens(ssep(argTypes.map(toDoc), comma <> space)) <+> "->" <+> toDoc(returnType)
@@ -24,11 +24,24 @@ object BloomPrettyPrinter extends PrettyPrinter {
     }
   }
 
-  def toDoc(prop: FunctionProperty): Doc = {
+  implicit def toDoc(field: Field): Doc = {
+    field.name <> colon <+> toDoc(field.typ)
+  }
+
+  implicit def toDoc(decl: CollectionDeclaration): Doc = {
+    val values =
+      if (decl.values.isEmpty) empty
+      else space <> "=>" <+> brackets(ssep(decl.values.map(toDoc), comma <> space))
+    decl.collectionType.toString.toLowerCase <+>
+    decl.name <> comma <+>
+    brackets(ssep(decl.keys.map(toDoc), comma <> space)) <> values
+  }
+
+  implicit def toDoc(prop: FunctionProperty): Doc = {
     prop.getClass.getSimpleName
   }
 
-  def toDoc(node: Node): Doc = {
+  implicit def toDoc(node: Node): Doc = {
     node match {
       case PlusStatement(a, b, _) =>
         toDoc(a) <+> plus <+> toDoc(b)
@@ -46,11 +59,7 @@ object BloomPrettyPrinter extends PrettyPrinter {
     }
   }
 
-  def pretty(typ: BloomType): String = {
-    super.pretty(toDoc(typ))
-  }
-
-  def pretty(node: Node): String = {
-    super.pretty(toDoc(node))
+  def pretty[T](x: T)(implicit toDoc: T => Doc): String = {
+    super.pretty(toDoc(x))
   }
 }

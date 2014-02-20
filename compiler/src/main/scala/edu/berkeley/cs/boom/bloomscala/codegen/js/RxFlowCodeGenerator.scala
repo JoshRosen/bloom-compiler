@@ -3,6 +3,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.js
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow._
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.HashEquiJoinElement
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.Table
+import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter
 
 /**
  * Compiles Bloom programs to Javascript that use the RxJs and RxFlow libraries.
@@ -20,84 +21,95 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
 
   private def elemName(elem: DataflowElement): Doc = {
     elem match {
-      case Table(collection) => text(collection.name)
-      case e => text("elem" + e.id)
+      case Table(collection) => dquotes(collection.name)
+      case e => text(e.id.toString)
     }
   }
 
   private def portName(inputPort: InputPort): Doc = {
-    inputPort.elem match {
+    val elemRef = "elements" <> brackets(elemName(inputPort.elem))
+    elemRef <> dot <> (inputPort.elem match {
       case HashEquiJoinElement(_, _, _) =>
         inputPort.name match {
-          case "leftInput" => elemName(inputPort.elem) <> dot <> "leftInput"
-          case "rightInput" => elemName(inputPort.elem) <> dot <> "rightInput"
+          case "leftInput" => "leftInput"
+          case "rightInput" => "rightInput"
         }
       case Table(collection) =>
         inputPort.name match {
-          case "deltaIn" => elemName(inputPort.elem) <> "Delta"
+          case "deltaIn" => "Delta"
         }
-      case _ => elemName(inputPort.elem) <> dot <> "input"
-    }
+      case _ => "input"
+    })
   }
 
   private def portName(outputPort: OutputPort): Doc = {
-    outputPort.elem match {
-      case Table(_) => elemName(outputPort.elem) <> "Delta"
-      case _ => elemName(outputPort.elem) <> dot <> "output"
+    val elemRef = "elements" <> brackets(elemName(outputPort.elem))
+    elemRef <> dot <> "output"
+  }
+
+  private def buildInvalidationAndRescanLookupTables(graph: DataflowGraph): Doc = {
+    val invalidations = graph.invalidationLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
+    val rescans = graph.rescanLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
+    "var" <+> "invalidationLookupTable" <+> equal <+> mapLiteral(invalidations) <> semi <@@>
+    "var" <+> "rescanLookupTable" <+> equal <+> mapLiteral(rescans) <> semi
+  }
+
+  private def buildTables(graph: DataflowGraph): Doc = {
+    val tables = graph.tables.values.map { table =>
+      (elemName(table), "new" <+> methodCall("rxflow", "Table", table.lastKeyColIndex.toString) <+>
+        comment(BloomPrettyPrinter.pretty(table.collection)))
+    }.toMap
+
+    "var" <+> "tables" <+> equal <+> mapLiteral(tables) <> semi
+  }
+
+  private def buildElement(elem: DataflowElement): Doc = {
+    elem match {
+      case hj @ HashEquiJoinElement(buildKey, probeKey, leftIsBuild) =>
+        "new" <+> methodCall("rxflow", "HashJoin",
+            genLambda(buildKey, List("x")),
+            genLambda(probeKey, List("x")),
+            if (leftIsBuild) "\"left\"" else "\"right\""
+          )
+      case mapElem @ MapElement(mapFunction, functionArity) =>
+        val exprParameterNames =
+          if (functionArity == 1) List("x")
+          else (0 to functionArity - 1).map(x => s"x[$x]").toList
+        "new" <+> methodCall("rxflow", "Map", genLambda(mapFunction, List("x"), Some(exprParameterNames)))
+      case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
     }
   }
 
+  private def buildElements(graph: DataflowGraph): Doc = {
+    // TODO: handle strata
+    val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[Table]).toSeq)
+    val elementsMap = elements.map { elem =>
+      (elemName(elem), buildElement(elem))
+    }.toMap
+
+    "var" <+> "elements" <+> equal <+> mapLiteral(elementsMap) <> semi
+  }
+
+  private def wireElements(graph: DataflowGraph): Doc = {
+    val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[Table]).toSeq)
+    elements.flatMap { elem =>
+      elem.outputPorts.flatMap { outputPort => outputPort.connections.map { case Edge(_, inputPort) =>
+        portName(outputPort) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
+      }}
+    }.reduce(_ <@@> _)
+  }
+
   override def generateCode(graph: DataflowGraph): CharSequence = {
-    val tableNames = graph.tables.values.map(_.collection.name)
-
-    val deltaSubjects = tableNames.map(name => text(s"var ${name}Delta = new Rx.Subject();"))
-
-    val deltaIns = tableNames.map { name =>
-      s"this.${name}In = new Rx.Subject();" <@@>
-      s"this.${name}In.subscribe(${name}Delta);" <> linebreak
-    }
-
-    val deltaOuts = tableNames.map { name =>
-      s"this.${name}Out = new Rx.Subject();" <@@>
-      s"${name}Delta.distinct().subscribe(this.${name}Out);" <> linebreak
-    }
-
-    val dataflowRules = graph.stratifiedElements.flatMap { case (stratum, allElements) =>
-      val elements = allElements.filterNot(_.isInstanceOf[Table]).toSeq
-      val elementCreation = elements.map {
-        case hj @ HashEquiJoinElement(buildKey, probeKey, leftIsBuild) =>
-          "var" <+> elemName(hj) <+> equal <+> "new" <+>
-            methodCall("rxflow", "HashJoin",
-              genLambda(buildKey, List("x")),
-              genLambda(probeKey, List("x")),
-              if (leftIsBuild) "\"left\"" else "\"right\""
-            ) <> semi
-        case mapElem @ MapElement(mapFunction, functionArity) =>
-          val exprParameterNames =
-            if (functionArity == 1) List("x")
-            else (0 to functionArity - 1).map(x => s"x[$x]").toList
-          "var" <+> elemName(mapElem) <+> equal <+> "new" <+>
-            methodCall("rxflow", "Map", genLambda(mapFunction, List("x"), Some(exprParameterNames))) <> semi
-        case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
-      }
-      val elementWiring = allElements.flatMap {
-        elem => elem.outputPorts.flatMap { outputPort => outputPort.connections.map { case Edge(_, inputPort) =>
-            portName(outputPort) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
-          }
-        }
-      }
-      elementCreation ++ elementWiring
-    }
 
     val code = "function Bloom ()" <+> braces(nest(
       linebreak <>
-      deltaSubjects.reduce(_ <@@> _) <@@>
+      buildTables(graph) <@@>
       linebreak <>
-      deltaIns.reduce(_ <@@> _) <@@>
+      buildElements(graph) <@@>
       linebreak <>
-      deltaOuts.reduce(_ <@@> _) <@@>
+      buildInvalidationAndRescanLookupTables(graph) <@@>
       linebreak <>
-      dataflowRules.reduce(_ <@@> _)
+      wireElements(graph)
     ) <> linebreak)
     super.pretty(code)
   }

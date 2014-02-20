@@ -23,6 +23,17 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
 
   override def hashCode(): Int = collection.hashCode()
 
+  /**
+   * Return the index of the last key column.
+   *
+   * Assumes that records are of the form [keyCol1, keyCol2, ... , valCol1, valCol2, ...].
+   * If lastKeyColIndex == len(record) - 1, then the entire record is treated as the key
+   * and the table functions like a set.
+   */
+  def lastKeyColIndex: Int = {
+    collection.keys.length - 1
+  }
+
   val scanner = new Scanner(this)
 }
 
