@@ -44,4 +44,24 @@ class TyperSuite extends BloomScalaSuite {
       """.stripMargin)
     }
   }
+
+  test("cannot insert into inputs") {
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
+      """
+        | input a, [key: int, val: int]
+        | table b, [key: int, val: int]
+        | a <= b
+      """.stripMargin)
+    }
+  }
+
+  test("cannot read from outputs") {
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
+      """
+        | output a, [key: int, val: int]
+        | table b, [key: int, val: int]
+        | b <= a
+      """.stripMargin)
+    }
+  }
 }

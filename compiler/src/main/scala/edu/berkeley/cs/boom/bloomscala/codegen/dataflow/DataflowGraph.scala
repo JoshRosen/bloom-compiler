@@ -4,6 +4,7 @@ import edu.berkeley.cs.boom.bloomscala.analysis.{Stratum, Stratifier}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import edu.berkeley.cs.boom.bloomscala.ast.CollectionDeclaration
+import edu.berkeley.cs.boom.bloomscala.typing.CollectionType
 
 class DataflowGraph(stratifier: Stratifier) {
   val nextElementId = new AtomicInteger(0)
@@ -27,5 +28,23 @@ class DataflowGraph(stratifier: Stratifier) {
       tables(decl) = table
       elements += table
       table
+    }
+
+  val inputs: mutable.Map[CollectionDeclaration, InputElement] =
+    mutable.HashMap[CollectionDeclaration, InputElement]().withDefault { decl =>
+      val input = InputElement(decl)(this, stratifier.collectionStratum(decl))
+      inputs(decl) = input
+      elements += input
+      input
+    }
+
+  val collections: mutable.Map[CollectionDeclaration, ScannableDataflowElement] =
+    mutable.HashMap[CollectionDeclaration, ScannableDataflowElement]().withDefault { decl =>
+      val newElem = decl.collectionType match {
+        case CollectionType.Table => tables(decl)
+        case CollectionType.Input => inputs(decl)
+      }
+      collections(decl) = newElem
+      newElem
     }
 }

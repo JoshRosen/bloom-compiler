@@ -4,7 +4,8 @@ import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
 
 
-case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class Table(override val collection: CollectionDeclaration)
+                (implicit g: DataflowGraph, s: Stratum) extends ScannableDataflowElement(collection) {
   /** Sources of new tuples to process in the current tick */
   val deltaIn = InputPort(this, "deltaIn")
   /* Sources of tuples to be added in the next tick */
@@ -15,29 +16,19 @@ case class Table(collection: CollectionDeclaration)(implicit g: DataflowGraph, s
   def hasInputs: Boolean = {
     !Seq(deltaIn, pendingIn, deleteIn).flatMap(_.connections).isEmpty
   }
-
-  override def equals(other: Any): Boolean = other match {
-    case that: Table => collection == that.collection
-    case _ => false
-  }
-
-  override def hashCode(): Int = collection.hashCode()
-
-  /**
-   * Return the index of the last key column.
-   *
-   * Assumes that records are of the form [keyCol1, keyCol2, ... , valCol1, valCol2, ...].
-   * If lastKeyColIndex == len(record) - 1, then the entire record is treated as the key
-   * and the table functions like a set.
-   */
-  def lastKeyColIndex: Int = {
-    collection.keys.length - 1
-  }
-
-  val scanner = new Scanner(this)
 }
 
-case class Scanner(table: Table)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class InputElement(override val collection: CollectionDeclaration)
+                       (implicit g: DataflowGraph, s: Stratum) extends ScannableDataflowElement(collection) {
+
+}
+
+case class OutputElement(val collection: CollectionDeclaration)
+                        (implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+
+}
+
+case class Scanner(table: ScannableDataflowElement)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
   val output = OutputPort(this, "output")
 }
 

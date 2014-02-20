@@ -2,6 +2,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import edu.berkeley.cs.boom.bloomscala.analysis.Stratum
 import scala.collection.mutable
+import edu.berkeley.cs.boom.bloomscala.ast.CollectionDeclaration
 
 /**
  * Represents a generic push-based dataflow element.
@@ -27,6 +28,24 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
   }
 
   override def hashCode(): Int = id
+}
+
+/**
+ * Base class for dataflow elements that have scanners.
+ */
+class ScannableDataflowElement(val collection: CollectionDeclaration)
+                              (implicit graph: DataflowGraph, stratum: Stratum) extends DataflowElement {
+  val scanner = new Scanner(this)
+  /**
+   * Return the index of the last key column.
+   *
+   * Assumes that records are of the form [keyCol1, keyCol2, ... , valCol1, valCol2, ...].
+   * If lastKeyColIndex == len(record) - 1, then the entire record is treated as the key
+   * and the table functions like a set.
+   */
+  def lastKeyColIndex: Int = {
+    collection.keys.length - 1
+  }
 }
 
 /**

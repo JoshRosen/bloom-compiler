@@ -6,6 +6,7 @@ import edu.berkeley.cs.boom.bloomscala.ast._
 import edu.berkeley.cs.boom.bloomscala.typing.FieldType._
 import org.kiama.rewriting.PositionalRewriter._
 import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter.pretty
+import org.kiama.attribution.Attributable
 
 
 class Typer(messaging: Messaging) {
@@ -75,16 +76,34 @@ class Typer(messaging: Messaging) {
         collection.collection.schema
     }
 
+
+  /**
+   * The collections referenced in this subtree.
+   */
+  private lazy val referencedCollections: Attributable => Set[CollectionDeclaration] =
+    attr {
+      case cr: CollectionRef => Set(cr.collection)
+      case n: Node => n.children.map(referencedCollections).foldLeft(Set.empty[CollectionDeclaration])(_.union(_))
+    }
+
   lazy val isWellTyped: Statement => Boolean =
     attr {
       case stmt @ Statement(lhs, op, rhs, _) =>
-        val lSchema = lhs.collection.schema
-        val rSchema = rhsSchema(rhs)
-        if (rSchema != lSchema) {
-          message(stmt, s"RHS has wrong schema; expected ${pretty(lSchema)} but got ${pretty(rSchema)}")
+        if (!referencedCollections(rhs).forall(c => CollectionType.validRHSTypes.contains(c.collectionType))) {
+          message(stmt, s"Output collections cannot appear in the RHS of rules")
+          false
+        } else if (!CollectionType.validLHSTypes.contains(lhs.collection.collectionType)) {
+          message(stmt, s"Cannot insert into collections of type '${lhs.collection.collectionType}'")
           false
         } else {
-          true
+          val lSchema = lhs.collection.schema
+          val rSchema = rhsSchema(rhs)
+          if (rSchema != lSchema) {
+            message(stmt, s"RHS has wrong schema; expected ${pretty(lSchema)} but got ${pretty(rSchema)}")
+            false
+          } else {
+            true
+          }
         }
     }
 

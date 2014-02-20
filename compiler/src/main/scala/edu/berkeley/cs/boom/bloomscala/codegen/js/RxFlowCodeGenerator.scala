@@ -22,6 +22,7 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
   private def elemName(elem: DataflowElement): Doc = {
     elem match {
       case Table(collection) => dquotes(collection.name)
+      case InputElement(collection) => dquotes(collection.name)
       case e => text(e.id.toString)
     }
   }
@@ -50,7 +51,7 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
   private def buildInvalidationAndRescanLookupTables(graph: DataflowGraph): Doc = {
     val invalidations = graph.invalidationLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
     val rescans = graph.rescanLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
-    "var" <+> "invalidationLookupTable" <+> equal <+> mapLiteral(invalidations) <> semi <@@>
+    "var" <+> "invalidationLookupTable" <+> equal <+> mapLiteral(invalidations) <> semi <@@> line <>
     "var" <+> "rescanLookupTable" <+> equal <+> mapLiteral(rescans) <> semi
   }
 
@@ -61,6 +62,19 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     }.toMap
 
     "var" <+> "tables" <+> equal <+> mapLiteral(tables) <> semi
+  }
+
+  private def buildInputs(graph: DataflowGraph): Doc = {
+    // TODO: this should create an Rx observer, not a Subject.
+    val inputs = graph.inputs.values.map { input =>
+      (elemName(input), "new" <+> methodCall("rx", "Subject") <+>
+        comment(BloomPrettyPrinter.pretty(input.collection)))
+    }.toMap
+
+    "var" <+> "inputs" <+> equal <+> mapLiteral(inputs) <> semi <@@>
+    graph.inputs.values.map { input =>
+      "this" <> dot <> input.collection.name <+> equal <+> "inputs" <> brackets(elemName(input)) <> semi
+    }.foldLeft(empty)(_ <@@> _)
   }
 
   private def buildElement(elem: DataflowElement): Doc = {
@@ -76,13 +90,20 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
           if (functionArity == 1) List("x")
           else (0 to functionArity - 1).map(x => s"x[$x]").toList
         "new" <+> methodCall("rxflow", "Map", genLambda(mapFunction, List("x"), Some(exprParameterNames)))
+      case Scanner(scannableElem) =>
+        scannableElem match {
+          case table: Table =>
+            methodCall("tables" <> brackets(elemName(table)), "getScanner")
+          case input: InputElement =>
+            methodCall("inputs" <> brackets(elemName(input)), "getScanner")
+        }
       case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
     }
   }
 
   private def buildElements(graph: DataflowGraph): Doc = {
     // TODO: handle strata
-    val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[Table]).toSeq)
+    val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[ScannableDataflowElement]).toSeq)
     val elementsMap = elements.map { elem =>
       (elemName(elem), buildElement(elem))
     }.toMap
@@ -104,6 +125,8 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     val code = "function Bloom ()" <+> braces(nest(
       linebreak <>
       buildTables(graph) <@@>
+      linebreak <>
+      buildInputs(graph) <@@>
       linebreak <>
       buildElements(graph) <@@>
       linebreak <>
