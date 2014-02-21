@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+import com.typesafe.sbt.SbtNativePackager.packageArchetype
 
 
 object BuildSettings {
@@ -33,7 +34,7 @@ object BloomScalaBuild extends Build {
   lazy val compiler = Project(
     "bloom-compiler",
     file("compiler"),
-    settings = buildSettings ++ Seq(
+    settings = packageArchetype.java_application ++ buildSettings ++ Seq(
       libraryDependencies ++= Seq(
         "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
         "org.slf4j" % "slf4j-log4j12" % "1.7.5",

@@ -9,14 +9,24 @@ This is an experimental compiler for a new language based on
 The command line interface to the Bloom compiler is implemented by the
 `Compiler` object.
 
-From a source checkout, the easiest way to run the compiler is through `sbt
-run`; use
+During development, the easiest way to run the compiler is through `sbt run`;
+use
 
     sbt run --infile <sourcefile> --target [dataflow|rxflow]
 
 to compile `sourcefile` and generate either a GraphViz .DOT file representing
 a dataflow graph (for the `dataflow` target) or Javascript code (for the
 `rxflow` target).
+
+
+To build a binary distribution of the compiler, use the
+[sbt-native-packager](https://github.com/sbt/sbt-native-packager) sbt targets;
+for example, running `sbt stage` will stage a binary distribution in the
+`compiler/target/universal/stage` directory, where you can use
+
+    ./compiler/target/universal/stage/bin/bloom-compiler
+
+to run the compiler.
 
 We don't have a language reference yet, but in the meantime there are some
 [example programs](/compiler/src/test/resources/examples/) that give a flavor
