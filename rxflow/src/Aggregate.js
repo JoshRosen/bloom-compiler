@@ -13,6 +13,7 @@ var Rx = require('rx');
 function Aggregate(keyFunction, aggregates) {
     'use strict';
 
+    var _this = this;
     var _aggregators = [];
     var _groupKeys = [];
     var _keyToArrayIndex = {};
@@ -40,6 +41,12 @@ function Aggregate(keyFunction, aggregates) {
      */
     this.input = Rx.Observer.create(updateAggs);
 
+    this.output = new Rx.Subject();
+
+    this.flush = function() {
+        this.getCurrentValues().subscribe(_this.output);
+    };
+
     /**
      * Return a stream of groups and values as an Rx observable.
      */
@@ -49,7 +56,6 @@ function Aggregate(keyFunction, aggregates) {
             for (var i = 0; i < _aggregators.length; ++i) {
                 observer.onNext([_groupKeys[i]].concat(_aggregators[i].map(extractValue)));
             }
-            observer.onCompleted();
         });
     };
 
@@ -57,7 +63,7 @@ function Aggregate(keyFunction, aggregates) {
      * Reset this element by resetting aggregates to their initial values
      * and clearing all groups.
      */
-    this.reset = function() {
+    this.invalidate = function() {
         _aggregators = [];
         _groupKeys = [];
         _keyToArrayIndex = {};
