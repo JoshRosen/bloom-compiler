@@ -3,4 +3,7 @@ rxflow.Aggregate = require('./Aggregate');
 rxflow.Buffer = require('./Buffer');
 rxflow.HashJoin = require('./HashJoin');
 rxflow.Map = require('./Map');
+rxflow.Table = require('./Table');
+rxflow.TableScanner = require('./TableScanner');
+rxflow.ObservableScanner = require('./ObservableScanner');
 module.exports = rxflow;
