@@ -19,20 +19,20 @@ function Bloom () {
     this.shortest = outputs["shortest"];
 
     var elements = {
+        0: new rxflow.Map(
+            function(x) { return [x[0], x[1], x[1], x[2]]; /* [l.from, l.to, l.to, l.cost] */ }
+        ),
+        2: new rxflow.ObservableScanner(inputs["link"]),
+        4: new rxflow.TableScanner(tables["path"]),
         5: new rxflow.HashJoin(
             function(x) { return x[1]; /* link.to */ },
             function(x) { return x[0]; /* path.from */ },
             "left"
         ),
-        4: new rxflow.TableScanner(tables["path"]),
-        2: new rxflow.ObservableScanner(inputs["link"]),
         6: new rxflow.HashJoin(
             function(x) { return x[1]; /* link.to */ },
             function(x) { return x[0]; /* path.from */ },
             "right"
-        ),
-        0: new rxflow.Map(
-            function(x) { return [x[0], x[1], x[1], x[2]]; /* [l.from, l.to, l.to, l.cost] */ }
         ),
         7: new rxflow.Map(
             function(x) { return [x[0][0], x[1][1], x[0][1], x[0][2] + x[1][3]]; /* [l.from, p.to, l.to, l.cost + p.cost] */ }
@@ -45,21 +45,21 @@ function Bloom () {
     };
 
     var invalidationLookupTable = {
-        "path": [5, "shortest", 6, 0, "path", 7, 8]
+        "path": [0, "path", 5, 6, 7, 8, "shortest"]
     };
 
     var rescanLookupTable = { "path": [2, 4] };
 
     elements[0].output.subscribe(tables["path"].insert);
-    elements[5].output.subscribe(elements[7].input);
     elements[2].output.subscribe(elements[0].input);
     elements[2].output.subscribe(elements[5].leftInput);
     elements[2].output.subscribe(elements[6].leftInput);
+    elements[4].output.subscribe(elements[5].rightInput);
+    elements[4].output.subscribe(elements[6].rightInput);
+    elements[4].output.subscribe(elements[8].input);
+    elements[5].output.subscribe(elements[7].input);
     elements[6].output.subscribe(elements[7].input);
     elements[7].output.subscribe(tables["path"].insert);
-    elements[4].output.subscribe(elements[6].rightInput);
-    elements[4].output.subscribe(elements[5].rightInput);
-    elements[4].output.subscribe(elements[8].input);
     elements[8].output.subscribe(outputs["shortest"]);
 
     function tickStratum0() {

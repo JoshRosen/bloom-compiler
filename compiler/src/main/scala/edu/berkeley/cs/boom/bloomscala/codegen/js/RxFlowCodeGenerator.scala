@@ -4,8 +4,7 @@ import edu.berkeley.cs.boom.bloomscala.codegen.dataflow._
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.HashEquiJoinElement
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.Table
 import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter
-import edu.berkeley.cs.boom.bloomscala.ast.{BoundFunctionRef, RowExpr}
-import edu.berkeley.cs.boom.bloomscala.stdlib.IntOrder
+import edu.berkeley.cs.boom.bloomscala.ast.RowExpr
 
 /**
  * Compiles Bloom programs to Javascript that use the RxJs and RxFlow libraries.
@@ -61,8 +60,12 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
   }
 
   private def buildInvalidationAndRescanLookupTables(graph: DataflowGraph): Doc = {
-    val invalidations = graph.invalidationLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
-    val rescans = graph.rescanLookupTable.map { case (k, v) => (elemName(k), arrayLiteral(v.map(elemName))) }
+    val invalidations = graph.invalidationLookupTable.map { case (k, v) =>
+      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemName)))
+    }
+    val rescans = graph.rescanLookupTable.map { case (k, v) =>
+      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemName)))
+    }
     "var" <+> "invalidationLookupTable" <+> equal <+> mapLiteral(invalidations) <> semi <@@> line <>
     "var" <+> "rescanLookupTable" <+> equal <+> mapLiteral(rescans) <> semi
   }
@@ -143,9 +146,10 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
 
   private def wireElements(graph: DataflowGraph): Doc = {
     val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[Table]).toSeq)
-    elements.flatMap { elem =>
-      elem.outputPorts.flatMap { outputPort => outputPort.connections.map { case Edge(_, inputPort) =>
-        portName(outputPort) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
+    elements.sortBy(_.id).flatMap { elem =>
+      elem.outputPorts.toSeq.sortBy(_.name).flatMap { outputPort =>
+        outputPort.connections.toSeq.sortBy(_.to.elem.id).map { case Edge(_, inputPort) =>
+          portName(outputPort) <> dot <> functionCall("subscribe", portName(inputPort)) <> semi
       }}
     }.reduce(_ <@@> _)
   }

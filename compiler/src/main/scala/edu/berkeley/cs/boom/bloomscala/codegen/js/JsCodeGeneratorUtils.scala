@@ -33,7 +33,7 @@ trait JsCodeGeneratorUtils extends PrettyPrinter {
   }
 
   def mapLiteral(map: Map[Doc, Doc]): Doc = {
-    val entries = map.toSeq.map { case (k, v) => k <> ":" <+> v}
+    val entries = map.toSeq.sortBy(x => pretty(x._1)).map { case (k, v) => k <> ":" <+> v}
     braces(space <> group(nest(linebreak <> ssep(immutable.Seq(entries: _*), comma <> line)) <> line))
   }
 
