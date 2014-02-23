@@ -30,17 +30,17 @@ trait DataflowCodeGenerator extends CodeGenerator {
       // Create the dataflow element that produces the RHS and return its OutputPort:
       val rhsOutput: OutputPort = rhs match {
         case cr: CollectionRef =>
-          graph.collections(cr.collection).scanner.output
+          graph.scannableCollections(cr.collection).scanner.output
         case MappedCollection(cr: CollectionRef, tupVars, rowExpr) =>
           val mapElem = MapElement(rowExpr, 1)
-          mapElem.input <-> graph.collections(cr.collection).scanner.output
+          mapElem.input <-> graph.scannableCollections(cr.collection).scanner.output
           mapElem.output
         case JoinedCollections(List(a, b), List(EqualityPredicate(aExpr, bExpr)), tupVars, rowExpr) =>
           // TODO: generalize for 3+ tables.
           // We can implement this using a pair of stateful hash join operators,
           // one for each delta.
-          val aSource = graph.collections(a.collection)
-          val bSource = graph.collections(b.collection)
+          val aSource = graph.scannableCollections(a.collection)
+          val bSource = graph.scannableCollections(b.collection)
           val aDelta = new HashEquiJoinElement(aExpr, bExpr, true)
           val bDelta = new HashEquiJoinElement(aExpr, bExpr, false)
           aDelta.leftInput <-> aSource.scanner.output
@@ -52,14 +52,14 @@ trait DataflowCodeGenerator extends CodeGenerator {
           project.input <-> bDelta.output
           project.output
         case NotIn(a, b) =>
-          val aSource = graph.collections(a.collection)
-          val bSource = graph.collections(b.collection)
+          val aSource = graph.scannableCollections(a.collection)
+          val bSource = graph.scannableCollections(b.collection)
           val notin = new NotInElement()
           notin.probeInput <-> aSource.scanner.output
           notin.tableInput <-> bSource.scanner.output
           notin.output
         case ArgMin(collection, groupingCols, chooseExpr, func) =>
-          val scanner = graph.collections(collection.collection).scanner
+          val scanner = graph.scannableCollections(collection.collection).scanner
           val choose = ArgMinElement(groupingCols, chooseExpr, func)
           scanner.output <-> choose.input
           choose.output
@@ -76,6 +76,10 @@ trait DataflowCodeGenerator extends CodeGenerator {
             rhsOutput <-> table.pendingIn
           case Delete =>
             rhsOutput <-> table.deleteIn
+        }
+        case output: OutputElement => op match {
+          case _ =>
+            rhsOutput <-> output.input
         }
       }
     }

@@ -20,12 +20,12 @@ case class Table(override val collection: CollectionDeclaration)
 
 case class InputElement(override val collection: CollectionDeclaration)
                        (implicit g: DataflowGraph, s: Stratum) extends ScannableDataflowElement(collection) {
-
+  val output = OutputPort(this, "output")
 }
 
 case class OutputElement(val collection: CollectionDeclaration)
                         (implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
-
+  val input = InputPort(this, "input")
 }
 
 case class Scanner(table: ScannableDataflowElement)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
@@ -38,7 +38,7 @@ case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: Data
 }
 
 case class ArgMinElement(groupingCols: List[FieldRef], chooseExpr: Expr, function: FunctionRef)
-                        (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
+                        (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Rescanable {
   val input = InputPort(this, "input")
   val output = OutputPort(this, "output")
 }

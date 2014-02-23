@@ -38,13 +38,32 @@ class DataflowGraph(stratifier: Stratifier) {
       input
     }
 
-  val collections: mutable.Map[CollectionDeclaration, ScannableDataflowElement] =
+  val outputs: mutable.Map[CollectionDeclaration, OutputElement] =
+    mutable.HashMap[CollectionDeclaration, OutputElement]().withDefault { decl =>
+      val output = OutputElement(decl)(this, stratifier.collectionStratum(decl))
+      outputs(decl) = output
+      elements += output
+      output
+    }
+
+  val scannableCollections: mutable.Map[CollectionDeclaration, ScannableDataflowElement] =
     mutable.HashMap[CollectionDeclaration, ScannableDataflowElement]().withDefault { decl =>
       val newElem = decl.collectionType match {
         case CollectionType.Table => tables(decl)
         case CollectionType.Input => inputs(decl)
       }
-      collections(decl) = newElem
+      scannableCollections(decl) = newElem
       newElem
     }
+
+  val collections: mutable.Map[CollectionDeclaration, DataflowElement] =
+    mutable.HashMap[CollectionDeclaration, DataflowElement]().withDefault { decl =>
+      val newElem = decl.collectionType match {
+        case CollectionType.Table => tables(decl)
+        case CollectionType.Input => inputs(decl)
+        case CollectionType.Output => outputs(decl)
+      }
+      newElem
+    }
+
 }

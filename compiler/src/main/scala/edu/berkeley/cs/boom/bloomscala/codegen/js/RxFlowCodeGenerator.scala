@@ -4,6 +4,8 @@ import edu.berkeley.cs.boom.bloomscala.codegen.dataflow._
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.HashEquiJoinElement
 import edu.berkeley.cs.boom.bloomscala.codegen.dataflow.Table
 import edu.berkeley.cs.boom.bloomscala.parser.BloomPrettyPrinter
+import edu.berkeley.cs.boom.bloomscala.ast.{BoundFunctionRef, RowExpr}
+import edu.berkeley.cs.boom.bloomscala.stdlib.IntOrder
 
 /**
  * Compiles Bloom programs to Javascript that use the RxJs and RxFlow libraries.
@@ -23,23 +25,33 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     elem match {
       case Table(collection) => dquotes(collection.name)
       case InputElement(collection) => dquotes(collection.name)
+      case OutputElement(collection) => dquotes(collection.name)
       case e => text(e.id.toString)
     }
   }
 
   private def portName(inputPort: InputPort): Doc = {
-    val elemRef = "elements" <> brackets(elemName(inputPort.elem))
-    elemRef <> dot <> (inputPort.elem match {
+    val elemRef = inputPort.elem match {
+      case OutputElement(collection) =>
+        "outputs"  <> brackets(elemName(inputPort.elem))
+      case Table(collection) =>
+        "tables"  <> brackets(elemName(inputPort.elem))
+      case _ =>
+        "elements"  <> brackets(elemName(inputPort.elem))
+    }
+    elemRef <> (inputPort.elem match {
       case HashEquiJoinElement(_, _, _) =>
         inputPort.name match {
-          case "leftInput" => "leftInput"
-          case "rightInput" => "rightInput"
+          case "leftInput" => ".leftInput"
+          case "rightInput" => ".rightInput"
         }
       case Table(collection) =>
         inputPort.name match {
-          case "deltaIn" => "Delta"
+          case "deltaIn" => ".insert"
         }
-      case _ => "input"
+      case OutputElement(collection) =>
+        empty  // Since outputs are currently implemented as RxJs Sbjects.
+      case _ => ".input"
     })
   }
 
@@ -77,6 +89,19 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     }.foldLeft(empty)(_ <@@> _)
   }
 
+  private def buildOutputs(graph: DataflowGraph): Doc = {
+    // TODO: this should create an Rx observable, not a Subject.
+    val outputs = graph.outputs.values.map { output =>
+      (elemName(output), "new" <+> methodCall("rx", "Subject") <+>
+        comment(BloomPrettyPrinter.pretty(output.collection)))
+    }.toMap
+
+    "var" <+> "outputs" <+> equal <+> mapLiteral(outputs) <> semi <@@>
+      graph.outputs.values.map { output =>
+        "this" <> dot <> output.collection.name <+> equal <+> "outputs" <> brackets(elemName(output)) <> semi
+      }.foldLeft(empty)(_ <@@> _)
+  }
+
   private def buildElement(elem: DataflowElement): Doc = {
     elem match {
       case hj @ HashEquiJoinElement(buildKey, probeKey, leftIsBuild) =>
@@ -93,17 +118,22 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
       case Scanner(scannableElem) =>
         scannableElem match {
           case table: Table =>
-            methodCall("tables" <> brackets(elemName(table)), "getScanner")
+            "new" <+> methodCall("rxflow", "TableScanner", "tables" <> brackets(elemName(table)))
           case input: InputElement =>
-            methodCall("inputs" <> brackets(elemName(input)), "getScanner")
+            "new" <+> methodCall("rxflow", "ObservableScanner", "inputs" <> brackets(elemName(input)))
         }
-      case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
+      case ArgMinElement(groupingCols, chooseExpr, orderingFunction) =>
+        "new" <+> methodCall("rxflow", "ArgMin", genLambda(RowExpr(groupingCols), List("x")), genLambda(chooseExpr, List("x")),
+          "function(x, y) { return x <= y; }")
+      //case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
     }
   }
 
   private def buildElements(graph: DataflowGraph): Doc = {
     // TODO: handle strata
-    val elements = graph.stratifiedElements.flatMap(_._2.filterNot(_.isInstanceOf[ScannableDataflowElement]).toSeq)
+    val elements = graph.stratifiedElements.flatMap(_._2)
+      .filterNot(_.isInstanceOf[ScannableDataflowElement])
+      .filterNot(_.isInstanceOf[OutputElement]).toSeq
     val elementsMap = elements.map { elem =>
       (elemName(elem), buildElement(elem))
     }.toMap
@@ -124,9 +154,14 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
 
     val code = "function Bloom ()" <+> braces(nest(
       linebreak <>
+      "var rx = require('rx');" <@@>
+      "var rxflow = require('rxflow');" <@@>
+      linebreak <>
       buildTables(graph) <@@>
       linebreak <>
       buildInputs(graph) <@@>
+      linebreak <>
+      buildOutputs(graph) <@@>
       linebreak <>
       buildElements(graph) <@@>
       linebreak <>
