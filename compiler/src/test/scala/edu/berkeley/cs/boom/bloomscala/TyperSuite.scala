@@ -64,4 +64,14 @@ class TyperSuite extends BloomScalaSuite {
       """.stripMargin)
     }
   }
+
+  test("outputs only support asynchronous merge") {
+    intercept[CompilerException] { Compiler.compileToIntermediateForm(
+      """
+        | output a, [key: int, val: int]
+        | table b, [key: int, val: int]
+        | a <= b
+      """.stripMargin)
+    }
+  }
 }

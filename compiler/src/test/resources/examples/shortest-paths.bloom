@@ -13,4 +13,4 @@ path <= (link * path) on (link.to == path.from) { |l, p|
 }
 
 // Find the shortest path between each connected pair of nodes
-shortest <= path.argmin([path.from, path.to], path.cost, intOrder)
+shortest <~ path.argmin([path.from, path.to], path.cost, intOrder)

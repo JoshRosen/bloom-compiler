@@ -95,6 +95,9 @@ class Typer(messaging: Messaging) {
         } else if (!CollectionType.validLHSTypes.contains(lhs.collection.collectionType)) {
           message(stmt, s"Cannot insert into collections of type '${lhs.collection.collectionType}'")
           false
+        } else if (lhs.collection.collectionType == CollectionType.Output && op != BloomOp.AsynchronousMerge) {
+          message(stmt, s"Output collections only support the <~ operator, but found " + op)
+          false
         } else {
           val lSchema = lhs.collection.schema
           val rSchema = rhsSchema(rhs)
