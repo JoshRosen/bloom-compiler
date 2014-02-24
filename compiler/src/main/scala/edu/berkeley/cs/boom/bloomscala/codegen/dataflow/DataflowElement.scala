@@ -31,7 +31,7 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
 }
 
 /**
- * Base class for dataflow elements that have scanners.
+ * Base class for dataflow elements that have elements.
  */
 class ScannableDataflowElement(val collection: CollectionDeclaration)
                               (implicit graph: DataflowGraph, stratum: Stratum) extends DataflowElement {
@@ -49,14 +49,14 @@ class ScannableDataflowElement(val collection: CollectionDeclaration)
 }
 
 /**
- * Mixin trait for dataflow elements that maintain internal state
- * that must be invalidated if any of their inputs perform rescans.
+ * Class for dataflow elements that maintain internal state that must be invalidated if
+ * any of their inputs perform rescans.
  */
-trait Stateful
+class StatefulDataflowElement(implicit graph: DataflowGraph, stratum: Stratum) extends DataflowElement
 
 /**
  * Mixin trait for stateful dataflow elements that can perform
  * rescans out of their caches rather than having to rescan
  * their inputs.
  */
-trait Rescanable extends Stateful
+class RescannableDataflowElement(implicit graph: DataflowGraph, stratum: Stratum) extends StatefulDataflowElement

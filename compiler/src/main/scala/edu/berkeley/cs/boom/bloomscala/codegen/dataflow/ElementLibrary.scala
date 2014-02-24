@@ -28,7 +28,7 @@ case class OutputElement(val collection: CollectionDeclaration)
   val input = InputPort(this, "input")
 }
 
-case class Scanner(table: ScannableDataflowElement)(implicit g: DataflowGraph, s: Stratum) extends DataflowElement {
+case class Scanner(table: ScannableDataflowElement)(implicit g: DataflowGraph, s: Stratum) extends RescannableDataflowElement {
   val output = OutputPort(this, "output")
 }
 
@@ -38,20 +38,20 @@ case class MapElement(mapFunction: RowExpr, functionArity: Int)(implicit g: Data
 }
 
 case class ArgMinElement(groupingCols: List[FieldRef], chooseExpr: Expr, function: FunctionRef)
-                        (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Rescanable {
+                        (implicit g: DataflowGraph, s: Stratum) extends RescannableDataflowElement {
   val input = InputPort(this, "input")
   val output = OutputPort(this, "output")
 }
 
 case class HashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr, leftIsBuild: Boolean)
-                              (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Stateful {
+                              (implicit g: DataflowGraph, s: Stratum) extends StatefulDataflowElement {
   val leftInput = InputPort(this, "leftInput")
   val rightInput = InputPort(this, "rightInput")
   val output = OutputPort(this, "output")
 }
 
 case class SymmetricHashEquiJoinElement(leftKey: ColExpr, rightKey: ColExpr)
-                                       (implicit g: DataflowGraph, s: Stratum) extends DataflowElement with Rescanable {
+                                       (implicit g: DataflowGraph, s: Stratum) extends RescannableDataflowElement {
   val leftInput = InputPort(this, "leftInput")
   val rightInput = InputPort(this, "rightInput")
   val output = OutputPort(this, "output")

@@ -2,7 +2,7 @@ package edu.berkeley.cs.boom.bloomscala.codegen.dataflow
 
 import edu.berkeley.cs.boom.bloomscala.analysis.{Stratum, Stratifier}
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import edu.berkeley.cs.boom.bloomscala.ast.CollectionDeclaration
 import edu.berkeley.cs.boom.bloomscala.typing.CollectionType
 
@@ -14,12 +14,16 @@ class DataflowGraph(stratifier: Stratifier) {
     elements.groupBy(_.stratum).toSeq.sortBy(_._1)
   }
 
-  def invalidationLookupTable: Map[Table, Set[DataflowElement]] = {
-    tables.valuesIterator.map(table => (table, InvalidationAnalyzer.invalidateSet(Set(table.scanner)))).toMap
+  def statefulElements: Set[StatefulDataflowElement] =
+    elements.filter(_.isInstanceOf[StatefulDataflowElement]).map(_.asInstanceOf[StatefulDataflowElement]).toSet
+
+
+  def invalidationLookupTable: immutable.Map[StatefulDataflowElement, Set[StatefulDataflowElement]] = {
+    statefulElements.map(elem => (elem, InvalidationAnalyzer.invalidateSet(Set(elem)))).toMap
   }
 
-  def rescanLookupTable: Map[Table, Set[DataflowElement]] = {
-    tables.valuesIterator.map(table => (table, InvalidationAnalyzer.rescanSet(Set(table.scanner)))).toMap
+  def rescanLookupTable: immutable.Map[StatefulDataflowElement, Set[StatefulDataflowElement]] = {
+    statefulElements.map(elem => (elem, InvalidationAnalyzer.rescanSet(Set(elem)))).toMap
   }
 
   val tables: mutable.Map[CollectionDeclaration, Table] =
