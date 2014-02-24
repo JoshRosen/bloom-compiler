@@ -19,11 +19,11 @@ class DataflowGraph(stratifier: Stratifier) {
 
 
   def invalidationLookupTable: immutable.Map[StatefulDataflowElement, Set[StatefulDataflowElement]] = {
-    statefulElements.map(elem => (elem, InvalidationAnalyzer.invalidateSet(Set(elem)))).toMap
+    statefulElements.map(elem => (elem, InvalidationAnalyzer.invalidateSet(Set(elem)) -- Set(elem))).toMap
   }
 
   def rescanLookupTable: immutable.Map[StatefulDataflowElement, Set[StatefulDataflowElement]] = {
-    statefulElements.map(elem => (elem, InvalidationAnalyzer.rescanSet(Set(elem)))).toMap
+    statefulElements.map(elem => (elem, InvalidationAnalyzer.rescanSet(Set(elem)) -- Set(elem))).toMap
   }
 
   val tables: mutable.Map[CollectionDeclaration, Table] =

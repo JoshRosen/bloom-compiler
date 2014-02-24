@@ -31,11 +31,14 @@ class DataflowElement(implicit graph: DataflowGraph, implicit val stratum: Strat
 }
 
 /**
- * Base class for dataflow elements that have elements.
+ * Base class for dataflow elements that have separate scanner elements (e.g. Tables).
  */
 class ScannableDataflowElement(val collection: CollectionDeclaration)
-                              (implicit graph: DataflowGraph, stratum: Stratum) extends DataflowElement {
+                              (implicit graph: DataflowGraph, stratum: Stratum) extends RescannableDataflowElement {
   val scanner = new Scanner(this)
+
+  override def downstreamElements = Set(scanner)
+
   /**
    * Return the index of the last key column.
    *

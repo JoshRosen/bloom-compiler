@@ -29,16 +29,18 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     }
   }
 
-  private def portName(inputPort: InputPort): Doc = {
-    val elemRef = inputPort.elem match {
-      case OutputElement(collection) =>
-        "outputs"  <> brackets(elemName(inputPort.elem))
-      case Table(collection) =>
-        "tables"  <> brackets(elemName(inputPort.elem))
-      case _ =>
-        "elements"  <> brackets(elemName(inputPort.elem))
+  private def elemRef(elem: DataflowElement): Doc = {
+    val mapName = elem match {
+      case t: Table => "tables"
+      case i: InputElement => "inputs"
+      case o: OutputElement => "outputs"
+      case _ => "elements"
     }
-    elemRef <> (inputPort.elem match {
+    mapName <> brackets(elemName(elem))
+  }
+
+  private def portName(inputPort: InputPort): Doc = {
+    elemRef(inputPort.elem) <> (inputPort.elem match {
       case HashEquiJoinElement(_, _, _) =>
         inputPort.name match {
           case "leftInput" => ".leftInput"
@@ -55,16 +57,15 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
   }
 
   private def portName(outputPort: OutputPort): Doc = {
-    val elemRef = "elements" <> brackets(elemName(outputPort.elem))
-    elemRef <> dot <> "output"
+    elemRef(outputPort.elem) <> dot <> "output"
   }
 
   private def buildInvalidationAndRescanLookupTables(graph: DataflowGraph): Doc = {
     val invalidations = graph.invalidationLookupTable.map { case (k, v) =>
-      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemName)))
+      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemRef)))
     }
     val rescans = graph.rescanLookupTable.map { case (k, v) =>
-      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemName)))
+      (elemName(k), arrayLiteral(v.toSeq.sortBy(_.id).map(elemRef)))
     }
     "var" <+> "invalidationLookupTable" <+> equal <+> mapLiteral(invalidations) <> semi <@@> line <>
     "var" <+> "rescanLookupTable" <+> equal <+> mapLiteral(rescans) <> semi
@@ -88,7 +89,7 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
 
     "var" <+> "inputs" <+> equal <+> mapLiteral(inputs) <> semi <@@>
     graph.inputs.values.map { input =>
-      "this" <> dot <> input.collection.name <+> equal <+> "inputs" <> brackets(elemName(input)) <> semi
+      "this" <> dot <> input.collection.name <+> equal <+> elemRef(input) <> semi
     }.foldLeft(empty)(_ <@@> _)
   }
 
@@ -101,7 +102,7 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
 
     "var" <+> "outputs" <+> equal <+> mapLiteral(outputs) <> semi <@@>
       graph.outputs.values.map { output =>
-        "this" <> dot <> output.collection.name <+> equal <+> "outputs" <> brackets(elemName(output)) <> semi
+        "this" <> dot <> output.collection.name <+> equal <+> elemRef(output) <> semi
       }.foldLeft(empty)(_ <@@> _)
   }
 
@@ -121,14 +122,13 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
       case Scanner(scannableElem) =>
         scannableElem match {
           case table: Table =>
-            "new" <+> methodCall("rxflow", "TableScanner", "tables" <> brackets(elemName(table)))
+            "new" <+> methodCall("rxflow", "TableScanner", elemRef(table))
           case input: InputElement =>
-            "new" <+> methodCall("rxflow", "ObservableScanner", "inputs" <> brackets(elemName(input)))
+            "new" <+> methodCall("rxflow", "ObservableScanner", elemRef(input))
         }
       case ArgMinElement(groupingCols, chooseExpr, orderingFunction) =>
         "new" <+> methodCall("rxflow", "ArgMin", genLambda(RowExpr(groupingCols), List("x")), genLambda(chooseExpr, List("x")),
           "function(x, y) { return x <= y; }")
-      //case elem => elemName(elem)  // TODO: remove this, since it's suppressing test failures
     }
   }
 

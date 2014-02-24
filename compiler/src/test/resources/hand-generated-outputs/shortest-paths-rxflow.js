@@ -45,10 +45,24 @@ function Bloom () {
     };
 
     var invalidationLookupTable = {
-        "path": [0, "path", 5, 6, 7, 8, "shortest"]
+        "link": [elements[5], elements[6]],
+        "path": [elements[5], elements[6]],
+        2: [tables["path"], elements[5], elements[6]],
+        4: [tables["path"], elements[5], elements[6], elements[8]],
+        5: [tables["path"], elements[6]],
+        6: [tables["path"], elements[5]],
+        8: []
     };
 
-    var rescanLookupTable = { "path": [2, 4] };
+    var rescanLookupTable = {
+        "link": [elements[2], elements[4]],
+        "path": [elements[2], elements[4]],
+        2: [elements[4]],
+        4: [elements[2]],
+        5: [elements[2], elements[4]],
+        6: [elements[2], elements[4]],
+        8: []
+    };
 
     elements[0].output.subscribe(tables["path"].insert);
     elements[2].output.subscribe(elements[0].input);
