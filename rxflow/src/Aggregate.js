@@ -1,98 +1,89 @@
+/// <reference path="../typings/rx.js/rx.d.ts" />
+/// <reference path="./DataflowElement.ts" />
 var Rx = require('rx');
 
 /**
- * Performs GROUP BY aggregation.
- *
- * @param keyFunction
- *      A function that extracts the key from each record.
- *      The key must be a hashable Javascript object.
- * @param {Array.<AggregationFunction>} aggregates
- *      A list of aggregation function classes.
- * @constructor
- */
-function Aggregate(keyFunction, aggregates) {
-    'use strict';
-
-    var _this = this;
-    var _aggregators = [];
-    var _groupKeys = [];
-    var _keyToArrayIndex = {};
-    var _nextArrayIndex = 0;
-
-    function createAggregators() {
-        return aggregates.map(function(Cls) { return new Cls(); });
-    }
-
-    function updateAggs(x) {
-        var key = keyFunction(x);
-        var idx = _keyToArrayIndex[key];
-        if (idx === undefined) {
-            _keyToArrayIndex[key] = idx = _nextArrayIndex;
-            _nextArrayIndex += 1;
-            _aggregators.push(createAggregators());
-            _groupKeys.push(key);
-        }
-        _aggregators[idx].forEach(function(agg) { agg.next(x); });
-    }
-
+* Performs GROUP BY aggregation.
+*/
+var Aggregate = (function () {
     /**
-     * An input stream of elements to be aggregated.
-     * @type {Rx.Observer}
-     */
-    this.input = Rx.Observer.create(updateAggs);
-
-    this.output = new Rx.Subject();
-
-    this.flush = function() {
-        this.getCurrentValues().subscribe(_this.output);
+    * Create a new Aggregate.
+    *
+    * @param keyFunction
+    *      A function that extracts the key from each record.
+    *      The key must be a hashable Javascript object.
+    * @param aggregates
+    *      A list of aggregation function classes.
+    */
+    function Aggregate(keyFunction, aggregates) {
+        var _this = this;
+        this.aggregators = [];
+        this.groupKeys = [];
+        this.keyToArrayIndex = {};
+        this.nextArrayIndex = 0;
+        /**
+        * An input stream of elements to be aggregated.
+        */
+        this.input = Rx.Observer.create(function (x) {
+            return _this.updateAggs(x);
+        });
+        this.output = new Rx.Subject();
+        this.keyFunction = keyFunction;
+        this.aggregates = aggregates;
+    }
+    Aggregate.prototype.createAggregators = function () {
+        return this.aggregates.map(function (Cls) {
+            return new Cls();
+        });
     };
 
-    /**
-     * Return a stream of groups and values as an Rx observable.
-     */
-    this.getCurrentValues = function() {
-        function extractValue(agg) { return agg.getValue(); }
-        return Rx.Observable.create(function(observer) {
-            for (var i = 0; i < _aggregators.length; ++i) {
-                observer.onNext([_groupKeys[i]].concat(_aggregators[i].map(extractValue)));
-            }
+    Aggregate.prototype.updateAggs = function (x) {
+        var key = this.keyFunction(x);
+        var idx = this.keyToArrayIndex[key];
+        if (idx === undefined) {
+            this.keyToArrayIndex[key] = idx = this.nextArrayIndex;
+            this.nextArrayIndex += 1;
+            this.aggregators.push(this.createAggregators());
+            this.groupKeys.push(key);
+        }
+        this.aggregators[idx].forEach(function (agg) {
+            return agg.next(x);
         });
     };
 
     /**
-     * Reset this element by resetting aggregates to their initial values
-     * and clearing all groups.
-     */
-    this.invalidate = function() {
-        _aggregators = [];
-        _groupKeys = [];
-        _keyToArrayIndex = {};
-        _nextArrayIndex = 0;
+    * Return a stream of groups and values as an Rx observable.
+    */
+    Aggregate.prototype.getCurrentValues = function () {
+        var _this = this;
+        return Rx.Observable.create(function (observer) {
+            for (var i = 0; i < _this.aggregators.length; ++i) {
+                observer.onNext([_this.groupKeys[i]].concat(_this.aggregators[i].map(function (agg) {
+                    return agg.getValue();
+                })));
+            }
+        });
     };
-}
 
-
-/* jshint ignore:start */
-/**
- * An aggregation function.  Instances maintain internal
- * state for computing aggregates, and expose methods to
- * retrieve the current aggregate value.
- * @interface
- * @constructor
- */
-function AggregationFunction() {
-    'use strict';
+    Aggregate.prototype.flush = function () {
+        var _this = this;
+        this.getCurrentValues().subscribe(function () {
+            return _this.output;
+        });
+    };
 
     /**
-     * Returns the current value of the aggregate.
-     */
-    this.getValue = function() {};
-
-    /**
-     * Update the aggregate with a new value.
-     */
-    this.next = function(val) {};
-}
-/* jshint ignore:end */
+    * Reset this element by resetting aggregates to their initial values
+    * and clearing all groups.
+    */
+    Aggregate.prototype.invalidate = function () {
+        this.aggregators = [];
+        this.groupKeys = [];
+        this.keyToArrayIndex = {};
+        this.nextArrayIndex = 0;
+    };
+    return Aggregate;
+})();
 
 module.exports = Aggregate;
+//# sourceMappingURL=Aggregate.js.map

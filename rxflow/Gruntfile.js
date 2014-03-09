@@ -14,12 +14,17 @@ module.exports = function(grunt) {
       gruntfile: {
         src: 'Gruntfile.js'
       },
-      src: {
-        src: ['src/**/*.js']
-      },
       test: {
         src: ['test/**/*.js']
       },
+    },
+    tslint: {
+      options: {
+        configuration: grunt.file.readJSON(".tslintrc")
+      },
+      files: {
+        src: ['src/**/*.ts']
+      }
     },
     jsdoc: {
       dist: {
@@ -34,9 +39,9 @@ module.exports = function(grunt) {
         files: '<%= jshint.gruntfile.src %>',
         tasks: ['jshint:gruntfile']
       },
-      src: {
-        files: '<%= jshint.src.src %>',
-        tasks: ['jshint:src', 'vows']
+      ts: {
+        files: '<%= ts.all.src %>',
+        tasks: ['tslint', 'ts:all', 'vows']
       },
       test: {
         files: '<%= jshint.test.src %>',
@@ -52,6 +57,24 @@ module.exports = function(grunt) {
         dest: 'benchmark/results.csv'
       },
     },
+    ts: {
+      all: {
+        src: ['src/**/*.ts'],
+        options: {
+          module: 'commonjs',
+          removeComments: false
+        }
+      }
+    },
+    tsd: {
+      all: {
+        options: {
+          command: 'reinstall',
+          latest: false,
+          config: './tsd.json'
+        }
+      }
+    },
   });
 
   // These plugins provide necessary tasks.
@@ -60,8 +83,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks("grunt-vows");
   grunt.loadNpmTasks("grunt-jsdoc");
+  grunt.loadNpmTasks("grunt-ts");
+  grunt.loadNpmTasks('grunt-tsd');
+  grunt.loadNpmTasks('grunt-tslint');
+
 
   // Default task.
-  grunt.registerTask('default', ['jshint', 'vows']);
+  grunt.registerTask('default', ['ts', 'tslint', 'jshint', 'vows']);
 
 };
