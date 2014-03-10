@@ -3,7 +3,11 @@
 /**
  * Base class for RxFlow dataflow elements.
  */
-interface DataflowElement {
+class DataflowElement {
 
-    invalidate()
+    invalidate() {
+        // This space intentionally left empty
+    }
 }
+
+export = DataflowElement;

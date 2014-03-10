@@ -1,7 +1,9 @@
 /// <reference path="../typings/rx.js/rx.d.ts" />
-/// <reference path="./DataflowElement.ts" />
 
 import Rx = require('rx');
+import DataflowElement = require('./DataflowElement');
+import InputPort = require('./InputPort');
+import OutputPort = require('./OutputPort');
 
 
 interface AggregationFunction<T, A> {
@@ -19,7 +21,7 @@ interface AggregationFunction<T, A> {
 /**
  * Performs GROUP BY aggregation.
  */
-class Aggregate<T> implements DataflowElement {
+class Aggregate<T> extends DataflowElement {
 
     private aggregators: Array<Array<AggregationFunction<T, any>>> = [];
     private groupKeys = [];
@@ -38,6 +40,7 @@ class Aggregate<T> implements DataflowElement {
      *      A list of aggregation function classes.
      */
     constructor(keyFunction: (T) => any, aggregates) {
+        super();
         this.keyFunction = keyFunction;
         this.aggregates = aggregates;
     }
@@ -61,9 +64,9 @@ class Aggregate<T> implements DataflowElement {
     /**
      * An input stream of elements to be aggregated.
      */
-    input = Rx.Observer.create<T>((x: T) => this.updateAggs(x));
+    input = new InputPort(x => this.updateAggs(x));
 
-    output = new Rx.Subject();
+    output = new OutputPort();
 
     /**
      * Return a stream of groups and values as an Rx observable.

@@ -1,11 +1,20 @@
 /// <reference path="../typings/rx.js/rx.d.ts" />
-/// <reference path="./DataflowElement.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var Rx = require('rx');
+var DataflowElement = require('./DataflowElement');
+var InputPort = require('./InputPort');
+var OutputPort = require('./OutputPort');
 
 /**
 * Performs GROUP BY aggregation.
 */
-var Aggregate = (function () {
+var Aggregate = (function (_super) {
+    __extends(Aggregate, _super);
     /**
     * Create a new Aggregate.
     *
@@ -17,6 +26,7 @@ var Aggregate = (function () {
     */
     function Aggregate(keyFunction, aggregates) {
         var _this = this;
+        _super.call(this);
         this.aggregators = [];
         this.groupKeys = [];
         this.keyToArrayIndex = {};
@@ -24,10 +34,10 @@ var Aggregate = (function () {
         /**
         * An input stream of elements to be aggregated.
         */
-        this.input = Rx.Observer.create(function (x) {
+        this.input = new InputPort(function (x) {
             return _this.updateAggs(x);
         });
-        this.output = new Rx.Subject();
+        this.output = new OutputPort();
         this.keyFunction = keyFunction;
         this.aggregates = aggregates;
     }
@@ -83,7 +93,7 @@ var Aggregate = (function () {
         this.nextArrayIndex = 0;
     };
     return Aggregate;
-})();
+})(DataflowElement);
 
 module.exports = Aggregate;
 //# sourceMappingURL=Aggregate.js.map
