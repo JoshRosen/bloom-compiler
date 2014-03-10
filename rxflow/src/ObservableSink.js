@@ -1,26 +1,26 @@
+/// <reference path="../typings/rx.js/rx.d.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var Rx = require('rx');
 var DataflowElement = require('./DataflowElement');
 var InputPort = require('./InputPort');
-var OutputPort = require('./OutputPort');
 
-var Map = (function (_super) {
-    __extends(Map, _super);
-    function Map(mapFunc) {
+var ObservableSink = (function (_super) {
+    __extends(ObservableSink, _super);
+    function ObservableSink() {
+        _super.apply(this, arguments);
         var _this = this;
-        _super.call(this);
-        this.output = new OutputPort();
+        this.output = new Rx.Subject();
         this.input = new InputPort(function (x) {
-            return _this.output.onNext(_this.mapFunc(x));
+            return _this.output.onNext(x);
         });
-        this.mapFunc = mapFunc;
     }
-    return Map;
+    return ObservableSink;
 })(DataflowElement);
 
-module.exports = Map;
-//# sourceMappingURL=Map.js.map
+module.exports = ObservableSink;
+//# sourceMappingURL=ObservableSink.js.map

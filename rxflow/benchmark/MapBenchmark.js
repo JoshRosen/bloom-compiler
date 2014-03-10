@@ -23,8 +23,10 @@ module.exports = {
             name: 'Multiply 100000 ints with rxflow.Map',
             setup: function() {
                 var map = new global.rxflow.Map(function(x) { return 2 * x; });
+                var sink = new global.rxflow.ObservableSink();
                 var arr = [];
-                map.output.subscribe(function(x) { arr.push(x); });
+                map.output.subscribe(sink.input);
+                sink.output.subscribe(function(x) { arr.push(x); });
             },
             fn: function() {
                 for (var i = 0; i < 100000; i++) {

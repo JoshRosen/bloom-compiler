@@ -7,4 +7,6 @@ rxflow.Map = require('./Map');
 rxflow.Table = require('./Table');
 rxflow.TableScanner = require('./TableScanner');
 rxflow.ObservableScanner = require('./ObservableScanner');
+rxflow.ObservableSink = require('./ObservableSink');
+
 module.exports = rxflow;
