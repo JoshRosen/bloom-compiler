@@ -11,7 +11,9 @@ vows.describe('HashJoin').addBatch({
             "left"
         );
         var joinResults = [];
-        join.output.forEach(function(x) { joinResults.push(x); });
+        var sink = new rxflow.ObservableSink();
+        join.output.subscribe(sink.input);
+        sink.output.forEach(function(x) { joinResults.push(x); });
         join.leftInput.onNext([1, 2]);
         join.leftInput.onNext([1, 3]);
         join.rightInput.onNext([2, 4]);

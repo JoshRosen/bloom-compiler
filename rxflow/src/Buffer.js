@@ -1,30 +1,43 @@
-var Rx = require('rx');
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var DataflowElement = require('./DataflowElement');
+var InputPort = require('./InputPort');
+var OutputPort = require('./OutputPort');
 
-
-function Buffer() {
-    'use strict';
-
-    var _buffer = [];
-
-    this.input = new Rx.Subject();
-    this.input.forEach(function(x) { _buffer.push(x); });
-    var _output = new Rx.Subject();
-    this.output = _output;
-
-    this.invalidate = function () {
-        _buffer = [];
+var Buffer = (function (_super) {
+    __extends(Buffer, _super);
+    function Buffer() {
+        _super.apply(this, arguments);
+        var _this = this;
+        this.buffer = [];
+        this.input = new InputPort(function (x) {
+            return _this.buffer.push(x);
+        });
+        this.output = new OutputPort();
+    }
+    Buffer.prototype.invalidate = function () {
+        this.buffer = [];
     };
 
-    this.isEmpty = function() {
-        return _buffer.length === 0;
+    Buffer.prototype.isEmpty = function () {
+        return this.buffer.length === 0;
     };
 
-    this.flush = function() {
-        var buffer = _buffer;
-        _buffer = [];
-        Rx.Observable.fromArray(buffer).forEach(function(x) { _output.onNext (x); });
-        return buffer.length;
+    Buffer.prototype.flush = function () {
+        var _this = this;
+        var oldBuffer = this.buffer;
+        this.buffer = [];
+        oldBuffer.forEach(function (x) {
+            return _this.output.onNext(x);
+        });
+        return oldBuffer.length;
     };
-}
+    return Buffer;
+})(DataflowElement);
 
 module.exports = Buffer;
+//# sourceMappingURL=Buffer.js.map

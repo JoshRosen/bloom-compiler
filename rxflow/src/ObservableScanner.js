@@ -1,4 +1,4 @@
-var Buffer = require('./buffer');
+var Buffer = require('./Buffer');
 
 
 function ObservableScanner(observable) {
