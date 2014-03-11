@@ -8,7 +8,7 @@ class ObservableSink<T> extends DataflowElement {
 
     output = new Rx.Subject<T>();
 
-    input = new InputPort(x => this.output.onNext(x));
+    input = new InputPort(x => this.output.onNext(x), this);
 
 }
 

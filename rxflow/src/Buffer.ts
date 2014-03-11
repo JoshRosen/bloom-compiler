@@ -6,8 +6,8 @@ class Buffer<T> extends DataflowElement {
 
     private buffer: Array<T> = [];
 
-    input = new InputPort<T>(x => this.buffer.push(x));
-    output = new OutputPort<T>();
+    input = new InputPort<T>(x => this.buffer.push(x), this);
+    output = new OutputPort<T>(this);
 
 
     invalidate() {

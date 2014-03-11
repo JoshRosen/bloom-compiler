@@ -79,7 +79,6 @@ function Bloom () {
     function tickStratum0() {
         var tuplesFlushed = 0;
         tuplesFlushed += elements[2].flush();
-        tuplesFlushed += elements[4].flush();
         return tuplesFlushed;
     }
 

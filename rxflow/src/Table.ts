@@ -6,7 +6,7 @@ import OutputPort = require('./OutputPort');
 /**
  * Represents a relation with a (composite) primary key.
  */
-class Table<T> {
+class Table<T> extends DataflowElement {
 
     private lastKeyColIndex: number;
     records = {};
@@ -18,10 +18,11 @@ class Table<T> {
      *      and the table functions like a set.
      */
     constructor(lastKeyColIndex: number) {
+        super();
         this.lastKeyColIndex = lastKeyColIndex;
     }
 
-    insertionStream = new OutputPort<T>();
+    insertionStream = new OutputPort<T>(this);
 
     private getKeyCols(rec) {
         return rec.slice(0, this.lastKeyColIndex + 1);
@@ -54,7 +55,7 @@ class Table<T> {
         }
     }
 
-    insert = new InputPort<T>(x => this.insertRecord(x));
+    insert = new InputPort<T>(x => this.insertRecord(x), this);
 
 }
 

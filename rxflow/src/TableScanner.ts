@@ -1,18 +1,15 @@
-import Buffer = require('./Buffer');
 import DataflowElement = require('./DataflowElement');
 import InputPort = require('./InputPort');
 import OutputPort = require('./OutputPort');
 import Table = require('./Table');
 
 
-
 class TableScanner<T> extends DataflowElement {
 
-    output = new OutputPort<T>();
+    output = new OutputPort<T>(this);
 
     private table: Table<T>;
-    private buffer = new Buffer();
-    private input = new InputPort<T>(x => this.output.onNext(x));
+    private input = new InputPort<T>(x => this.output.onNext(x), this);
 
     constructor(table: Table<T>) {
         super();
@@ -28,13 +25,6 @@ class TableScanner<T> extends DataflowElement {
         }
     }
 
-    invalidate() {
-        this.buffer.invalidate();
-    }
-
-    flush() {
-        return this.buffer.flush();
-    }
 }
 
 export = TableScanner;

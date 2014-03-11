@@ -9,5 +9,7 @@ rxflow.Table = require('./Table');
 rxflow.TableScanner = require('./TableScanner');
 rxflow.ObservableScanner = require('./ObservableScanner');
 rxflow.ObservableSink = require('./ObservableSink');
+rxflow.OutputPort = require('./OutputPort');
+rxflow.punctuations = require('./punctuations');
 
 module.exports = rxflow;

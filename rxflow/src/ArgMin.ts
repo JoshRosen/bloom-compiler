@@ -8,7 +8,7 @@ class ArgMin<T> extends DataflowElement {
 
     private aggregate: Aggregate<T>;
     input: InputPort<T>;
-    output = new OutputPort();
+    output = new OutputPort(this);
 
     constructor(keyFunction, orderingFields, orderingFunction) {
         super();
@@ -23,7 +23,7 @@ class ArgMin<T> extends DataflowElement {
         };
         this.aggregate = new Aggregate(keyFunction, [aggregateFunction]);
         this.input = this.aggregate.input;
-        var outputProjector = new InputPort(x => this.output.onNext(x[1]));
+        var outputProjector = new InputPort(x => this.output.onNext(x[1]), null);
         this.aggregate.output.subscribe(outputProjector);
     }
 

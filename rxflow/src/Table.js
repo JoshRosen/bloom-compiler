@@ -1,10 +1,18 @@
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var DataflowElement = require('./DataflowElement');
 var InputPort = require('./InputPort');
 var OutputPort = require('./OutputPort');
 
 /**
 * Represents a relation with a (composite) primary key.
 */
-var Table = (function () {
+var Table = (function (_super) {
+    __extends(Table, _super);
     /**
     * @param lastKeyColIndex  the index of the last key column.
     *      Assumes that records are of the form [keyCol1, keyCol2, ... , valCol1, valCol2, ...].
@@ -13,11 +21,12 @@ var Table = (function () {
     */
     function Table(lastKeyColIndex) {
         var _this = this;
+        _super.call(this);
         this.records = {};
-        this.insertionStream = new OutputPort();
+        this.insertionStream = new OutputPort(this);
         this.insert = new InputPort(function (x) {
             return _this.insertRecord(x);
-        });
+        }, this);
         this.lastKeyColIndex = lastKeyColIndex;
     }
     Table.prototype.getKeyCols = function (rec) {
@@ -51,7 +60,7 @@ var Table = (function () {
         }
     };
     return Table;
-})();
+})(DataflowElement);
 
 module.exports = Table;
 //# sourceMappingURL=Table.js.map

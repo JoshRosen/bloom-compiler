@@ -4,7 +4,6 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var Buffer = require('./Buffer');
 var DataflowElement = require('./DataflowElement');
 var InputPort = require('./InputPort');
 var OutputPort = require('./OutputPort');
@@ -14,11 +13,10 @@ var TableScanner = (function (_super) {
     function TableScanner(table) {
         var _this = this;
         _super.call(this);
-        this.output = new OutputPort();
-        this.buffer = new Buffer();
+        this.output = new OutputPort(this);
         this.input = new InputPort(function (x) {
             return _this.output.onNext(x);
-        });
+        }, this);
         this.table = table;
         table.insertionStream.subscribe(this.input);
     }
@@ -28,14 +26,6 @@ var TableScanner = (function (_super) {
                 this.output.onNext(key + this.table.records[key]);
             }
         }
-    };
-
-    TableScanner.prototype.invalidate = function () {
-        this.buffer.invalidate();
-    };
-
-    TableScanner.prototype.flush = function () {
-        return this.buffer.flush();
     };
     return TableScanner;
 })(DataflowElement);

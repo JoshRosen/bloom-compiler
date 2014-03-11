@@ -1,6 +1,3 @@
-/// <reference path="../typings/rx.js/rx.d.ts" />
-
-import Rx = require('rx');
 import DataflowElement = require('./DataflowElement');
 import InputPort = require('./InputPort');
 import OutputPort = require('./OutputPort');
@@ -64,9 +61,9 @@ class Aggregate<T> extends DataflowElement {
     /**
      * An input stream of elements to be aggregated.
      */
-    input = new InputPort(x => this.updateAggs(x));
+    input = new InputPort(x => this.updateAggs(x), this);
 
-    output = new OutputPort();
+    output = new OutputPort(this);
 
     flush() {
         for (var i = 0; i < this.aggregators.length; ++i) {

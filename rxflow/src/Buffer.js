@@ -16,8 +16,8 @@ var Buffer = (function (_super) {
         this.buffer = [];
         this.input = new InputPort(function (x) {
             return _this.buffer.push(x);
-        });
-        this.output = new OutputPort();
+        }, this);
+        this.output = new OutputPort(this);
     }
     Buffer.prototype.invalidate = function () {
         this.buffer = [];

@@ -17,7 +17,7 @@ var ObservableSink = (function (_super) {
         this.output = new Rx.Subject();
         this.input = new InputPort(function (x) {
             return _this.output.onNext(x);
-        });
+        }, this);
     }
     return ObservableSink;
 })(DataflowElement);

@@ -7,7 +7,7 @@ class HashJoin extends DataflowElement {
 
     leftInput: InputPort<any>;
     rightInput: InputPort<any>;
-    output = new OutputPort();
+    output = new OutputPort(this);
 
     private buildInput: InputPort<any>;
     private probeInput: InputPort<any>;

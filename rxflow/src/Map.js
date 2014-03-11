@@ -13,10 +13,10 @@ var Map = (function (_super) {
     function Map(mapFunc) {
         var _this = this;
         _super.call(this);
-        this.output = new OutputPort();
+        this.output = new OutputPort(this);
         this.input = new InputPort(function (x) {
             return _this.output.onNext(_this.mapFunc(x));
-        });
+        }, this);
         this.mapFunc = mapFunc;
     }
     return Map;

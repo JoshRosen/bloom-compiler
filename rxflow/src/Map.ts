@@ -11,8 +11,8 @@ class Map<T, R> extends DataflowElement {
         this.mapFunc = mapFunc;
     }
 
-    output = new OutputPort();
-    input = new InputPort(x => this.output.onNext(this.mapFunc(x)));
+    output = new OutputPort(this);
+    input = new InputPort(x => this.output.onNext(this.mapFunc(x)), this);
 }
 
 export = Map;

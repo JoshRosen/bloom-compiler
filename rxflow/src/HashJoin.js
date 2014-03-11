@@ -13,7 +13,7 @@ var HashJoin = (function (_super) {
     function HashJoin(leftKeyFunc, rightKeyFunc, buildInput) {
         var _this = this;
         _super.call(this);
-        this.output = new OutputPort();
+        this.output = new OutputPort(this);
         this.hashTable = {};
         if (buildInput === 'left') {
             this.leftInput = new InputPort(function (x) {

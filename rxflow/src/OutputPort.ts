@@ -1,10 +1,15 @@
 import DataflowElement = require('./DataflowElement');
 import InputPort = require('./InputPort');
 
-
 class OutputPort<T> {
 
-    consumers: Array<InputPort<T>> = [];
+    private consumers: Array<InputPort<T>> = [];
+
+    constructor(elem: DataflowElement) {
+        if (elem != null) {
+            elem.registerOutput(this);
+        }
+    }
 
     onNext(val: T) {
         this.consumers.forEach(consumer => consumer.onNext(val));
@@ -12,7 +17,7 @@ class OutputPort<T> {
 
     subscribe(inputPort: InputPort<T>) {
         this.consumers.push(inputPort);
-        inputPort.producers.push(this);
+        inputPort.addProducer(this);
     }
 
 }

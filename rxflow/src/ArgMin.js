@@ -14,7 +14,7 @@ var ArgMin = (function (_super) {
     function ArgMin(keyFunction, orderingFields, orderingFunction) {
         var _this = this;
         _super.call(this);
-        this.output = new OutputPort();
+        this.output = new OutputPort(this);
         var aggregateFunction = function () {
             var value = null;
             this.getValue = function () {
@@ -30,7 +30,7 @@ var ArgMin = (function (_super) {
         this.input = this.aggregate.input;
         var outputProjector = new InputPort(function (x) {
             return _this.output.onNext(x[1]);
-        });
+        }, null);
         this.aggregate.output.subscribe(outputProjector);
     }
     ArgMin.prototype.flush = function () {

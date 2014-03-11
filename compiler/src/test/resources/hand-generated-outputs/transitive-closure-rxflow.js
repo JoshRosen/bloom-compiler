@@ -12,9 +12,9 @@ function Bloom () {
     this.link = inputs["link"];
 
     var outputs = {
-        "pathOut": new rx.Subject() /* output pathOut, [from: string, to: string, nxt: string, cost: int] */
+        "pathOut": new rxflow.ObservableSink() /* output pathOut, [from: string, to: string, nxt: string, cost: int] */
     };
-    this.pathOut = outputs["pathOut"];
+    this.pathOut = outputs["pathOut"].output;
 
     var elements = {
         6: new rxflow.HashJoin(
@@ -48,7 +48,7 @@ function Bloom () {
     elements[2].output.subscribe(elements[0].input);
     elements[4].output.subscribe(elements[5].rightInput);
     elements[4].output.subscribe(elements[6].rightInput);
-    elements[4].output.subscribe(outputs["pathOut"]);
+    elements[4].output.subscribe(outputs["pathOut"].input);
 
     // Join outputs:
     elements[5].output.subscribe(elements[7].input);
@@ -61,7 +61,6 @@ function Bloom () {
     function tickInternal() {
         var tuplesFlushed = 0;
         tuplesFlushed += elements[2].flush();
-        tuplesFlushed += elements[4].flush();
         return tuplesFlushed;
     }
 
