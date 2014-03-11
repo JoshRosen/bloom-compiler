@@ -8,10 +8,6 @@ var OutputPort = (function () {
         });
     };
 
-    OutputPort.prototype.onCompleted = function () {
-        // Intentionally left blank
-    };
-
     OutputPort.prototype.subscribe = function (inputPort) {
         this.consumers.push(inputPort);
         inputPort.producers.push(this);

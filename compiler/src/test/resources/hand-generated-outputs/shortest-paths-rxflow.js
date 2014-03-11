@@ -13,10 +13,10 @@ function Bloom () {
     this.link = inputs["link"];
 
     var outputs = {
-        "shortest": new rx.Subject() /* output shortest, [from: string, to: string, nxt: string, cost: int] */
+        "shortest": new rxflow.ObservableSink() /* output shortest, [from: string, to: string, nxt: string, cost: int] */
     };
 
-    this.shortest = outputs["shortest"];
+    this.shortest = outputs["shortest"].output;
 
     var elements = {
         0: new rxflow.Map(
@@ -74,7 +74,7 @@ function Bloom () {
     elements[5].output.subscribe(elements[7].input);
     elements[6].output.subscribe(elements[7].input);
     elements[7].output.subscribe(tables["path"].insert);
-    elements[8].output.subscribe(outputs["shortest"]);
+    elements[8].output.subscribe(outputs["shortest"].input);
 
     function tickStratum0() {
         var tuplesFlushed = 0;

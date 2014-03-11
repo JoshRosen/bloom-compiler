@@ -10,10 +10,6 @@ class OutputPort<T> {
         this.consumers.forEach(consumer => consumer.onNext(val));
     }
 
-    onCompleted() {
-        // Intentionally left blank
-    }
-
     subscribe(inputPort: InputPort<T>) {
         this.consumers.push(inputPort);
         inputPort.producers.push(this);

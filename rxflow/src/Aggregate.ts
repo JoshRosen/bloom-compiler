@@ -68,19 +68,10 @@ class Aggregate<T> extends DataflowElement {
 
     output = new OutputPort();
 
-    /**
-     * Return a stream of groups and values as an Rx observable.
-     */
-    getCurrentValues() {
-        return Rx.Observable.create((observer: any) => {
-            for (var i = 0; i < this.aggregators.length; ++i) {
-                observer.onNext([this.groupKeys[i]].concat(this.aggregators[i].map((agg) => agg.getValue())));
-            }
-        });
-    }
-
     flush() {
-        this.getCurrentValues().subscribe(() => this.output);
+        for (var i = 0; i < this.aggregators.length; ++i) {
+            this.output.onNext([this.groupKeys[i]].concat(this.aggregators[i].map(agg => agg.getValue())));
+        }
     }
 
     /**

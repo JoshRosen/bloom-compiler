@@ -11,12 +11,14 @@ module.exports = {
             name: 'Push 100 ints',
             setup: function() {
                 var buffer = new global.rxflow.Buffer();
-                var numbers = global.Rx.Observable.range(0, 100);
+                var input = new global.rxflow.InputPort(function(x) { arr.push(x); });
                 var arr = [];
-                buffer.output.subscribe(function(x) { arr.push(x); });
+                buffer.output.subscribe(input);
             },
             fn: function() {
-                numbers.subscribe(buffer.input);
+                for (var i = 1; i < 100; i++) {
+                    buffer.input.onNext(i);
+                }
                 buffer.flush();
             }
         }

@@ -5,7 +5,6 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var Rx = require('rx');
 var DataflowElement = require('./DataflowElement');
 var InputPort = require('./InputPort');
 var OutputPort = require('./OutputPort');
@@ -61,25 +60,12 @@ var Aggregate = (function (_super) {
         });
     };
 
-    /**
-    * Return a stream of groups and values as an Rx observable.
-    */
-    Aggregate.prototype.getCurrentValues = function () {
-        var _this = this;
-        return Rx.Observable.create(function (observer) {
-            for (var i = 0; i < _this.aggregators.length; ++i) {
-                observer.onNext([_this.groupKeys[i]].concat(_this.aggregators[i].map(function (agg) {
-                    return agg.getValue();
-                })));
-            }
-        });
-    };
-
     Aggregate.prototype.flush = function () {
-        var _this = this;
-        this.getCurrentValues().subscribe(function () {
-            return _this.output;
-        });
+        for (var i = 0; i < this.aggregators.length; ++i) {
+            this.output.onNext([this.groupKeys[i]].concat(this.aggregators[i].map(function (agg) {
+                return agg.getValue();
+            })));
+        }
     };
 
     /**

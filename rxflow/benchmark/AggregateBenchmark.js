@@ -60,9 +60,12 @@ module.exports = {
                     var group = function(data) { return data[column]; };
                     var aggregate = new global.rxflow.Aggregate(group, [Count]);
                     var data = global.Rx.Observable.fromArray(testData);
+                    var sink = new global.rxflow.ObservableSink();
+                    aggregate.output.subscribe(sink.input);
                     data.subscribe(aggregate.input);
                     var results = [];
-                    aggregate.getCurrentValues().forEach(function (x) { results.push(x); });
+                    sink.output.forEach(function (x) { results.push(x); });
+                    aggregate.flush();
                 }
             }
         }
