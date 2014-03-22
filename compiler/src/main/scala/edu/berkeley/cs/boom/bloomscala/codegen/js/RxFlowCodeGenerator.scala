@@ -50,8 +50,6 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
         inputPort.name match {
           case "deltaIn" => ".insert"
         }
-      case OutputElement(collection) =>
-        empty  // Since outputs are currently implemented as RxJs Sbjects.
       case _ => ".input"
     })
   }
@@ -94,15 +92,14 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
   }
 
   private def buildOutputs(graph: DataflowGraph): Doc = {
-    // TODO: this should create an Rx observable, not a Subject.
     val outputs = graph.outputs.values.map { output =>
-      (elemName(output), "new" <+> methodCall("rx", "Subject") <+>
+      (elemName(output), "new" <+> methodCall("rxflow", "ObservableSink") <+>
         comment(BloomPrettyPrinter.pretty(output.collection)))
     }.toMap
 
     "var" <+> "outputs" <+> equal <+> mapLiteral(outputs) <> semi <@@>
       graph.outputs.values.map { output =>
-        "this" <> dot <> output.collection.name <+> equal <+> elemRef(output) <> semi
+        "this" <> dot <> output.collection.name <+> equal <+> elemRef(output) <> dot <> "output" <> semi
       }.foldLeft(empty)(_ <@@> _)
   }
 

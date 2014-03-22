@@ -12,7 +12,7 @@ The command line interface to the Bloom compiler is implemented by the
 During development, the easiest way to run the compiler is through `sbt run`;
 use
 
-    sbt run --infile <sourcefile> --target [dataflow|rxflow]
+    sbt "run --infile <sourcefile> --target [dataflow|rxflow]"
 
 to compile `sourcefile` and generate either a GraphViz .DOT file representing
 a dataflow graph (for the `dataflow` target) or Javascript code (for the
