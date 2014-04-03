@@ -13,20 +13,20 @@
     "test": "grunt vows"
   },
   "devDependencies": {
-    "grunt-contrib-jshint": "~0.8.0",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt": "~0.4.4",
     "grunt-vows": "~0.4.0",
     "grunt-benchmark": "~0.2.0",
-    "grunt-jsdoc": "~0.5.1",
-    "underscore": "~1.5.2",
-    "grunt-ts": "~1.7.3",
-    "typescript": "0.9.7",
-    "grunt-tsd": "0.0.4",
+    "grunt-jsdoc": "~0.5.4",
+    "underscore": "~1.6.0",
+    "grunt-ts": "~1.10.0",
+    "typescript": "1.0.0",
+    "grunt-tsd": "0.1.0",
     "grunt-tslint": "~0.4.1"
   },
   "keywords": [],
   "dependencies": {
-    "rx": "~2.2.13"
+    "rx": "~2.2.18"
   }
 }
