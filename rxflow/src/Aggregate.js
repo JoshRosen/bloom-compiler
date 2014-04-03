@@ -59,7 +59,7 @@ var Aggregate = (function (_super) {
         });
     };
 
-    Aggregate.prototype.flush = function () {
+    Aggregate.prototype.handleEndOfRound = function () {
         for (var i = 0; i < this.aggregators.length; ++i) {
             this.output.onNext([this.groupKeys[i]].concat(this.aggregators[i].map(function (agg) {
                 return agg.getValue();

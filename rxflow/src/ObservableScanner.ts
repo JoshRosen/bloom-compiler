@@ -5,6 +5,7 @@ import Buffer = require('./Buffer');
 import InputPort = require('./InputPort');
 import OutputPort = require('./OutputPort');
 import DataflowElement = require('./DataflowElement');
+import punctuations = require('./punctuations');
 
 class ObservableScanner<T> extends DataflowElement {
 
@@ -18,6 +19,10 @@ class ObservableScanner<T> extends DataflowElement {
 
     flush() {
         return this.buffer.flush();
+    }
+
+    endRound(round: number) {
+        this.buffer.input.onNext(new punctuations.EndOfRound(round));
     }
 }
 

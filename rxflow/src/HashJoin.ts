@@ -21,16 +21,16 @@ class HashJoin extends DataflowElement {
     constructor(leftKeyFunc, rightKeyFunc, buildInput) {
         super();
         if (buildInput === 'left') {
-            this.leftInput = new InputPort(x => this.handleBuildInput(x));
-            this.rightInput = new InputPort(x => this.handleProbeInput(x));
+            this.leftInput = new InputPort(x => this.handleBuildInput(x), this);
+            this.rightInput = new InputPort(x => this.handleProbeInput(x), this);
             this.buildInput = this.leftInput;
             this.probeInput = this.rightInput;
             this.buildKeyFunc = leftKeyFunc;
             this.probeKeyFunc = rightKeyFunc;
             this.resultOrderingFunction = function (b, p) {  return [b, p]; };
         } else if (buildInput === 'right') {
-            this.rightInput = new InputPort(x => this.handleBuildInput(x));
-            this.leftInput = new InputPort(x => this.handleProbeInput(x));
+            this.rightInput = new InputPort(x => this.handleBuildInput(x), this);
+            this.leftInput = new InputPort(x => this.handleProbeInput(x), this);
             this.buildInput = this.rightInput;
             this.probeInput = this.leftInput;
             this.buildKeyFunc = rightKeyFunc;

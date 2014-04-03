@@ -1,6 +1,7 @@
 import DataflowElement = require('./DataflowElement');
 import InputPort = require('./InputPort');
 import OutputPort = require('./OutputPort');
+import punctuations = require('./punctuations');
 
 
 /**
@@ -55,7 +56,11 @@ class Table<T> extends DataflowElement {
         }
     }
 
-    insert = new InputPort<T>(x => this.insertRecord(x), this);
+    insert = new InputPort(x => this.insertRecord(x), this);
+
+    endRound(round: number) {
+        this.insert.onNext(new punctuations.EndOfRound(round));
+    }
 
 }
 

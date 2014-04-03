@@ -9,6 +9,7 @@ var Rx = require('rx');
 var Buffer = require('./Buffer');
 
 var DataflowElement = require('./DataflowElement');
+var punctuations = require('./punctuations');
 
 var ObservableScanner = (function (_super) {
     __extends(ObservableScanner, _super);
@@ -23,6 +24,10 @@ var ObservableScanner = (function (_super) {
     }
     ObservableScanner.prototype.flush = function () {
         return this.buffer.flush();
+    };
+
+    ObservableScanner.prototype.endRound = function (round) {
+        this.buffer.input.onNext(new punctuations.EndOfRound(round));
     };
     return ObservableScanner;
 })(DataflowElement);

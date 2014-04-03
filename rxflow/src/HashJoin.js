@@ -18,10 +18,10 @@ var HashJoin = (function (_super) {
         if (buildInput === 'left') {
             this.leftInput = new InputPort(function (x) {
                 return _this.handleBuildInput(x);
-            });
+            }, this);
             this.rightInput = new InputPort(function (x) {
                 return _this.handleProbeInput(x);
-            });
+            }, this);
             this.buildInput = this.leftInput;
             this.probeInput = this.rightInput;
             this.buildKeyFunc = leftKeyFunc;
@@ -32,10 +32,10 @@ var HashJoin = (function (_super) {
         } else if (buildInput === 'right') {
             this.rightInput = new InputPort(function (x) {
                 return _this.handleBuildInput(x);
-            });
+            }, this);
             this.leftInput = new InputPort(function (x) {
                 return _this.handleProbeInput(x);
-            });
+            }, this);
             this.buildInput = this.rightInput;
             this.probeInput = this.leftInput;
             this.buildKeyFunc = rightKeyFunc;

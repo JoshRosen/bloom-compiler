@@ -33,7 +33,7 @@ vows.describe('Aggregate').addBatch({
         var sink = new rxflow.ObservableSink();
         aggregate.output.subscribe(sink.input);
         sink.output.forEach(function (x) { results.push(x); });
-        aggregate.flush();
+        aggregate.handleEndOfRound();
         assert.deepEqual(results, [[null, 3]]);
     },
     'Test single group': function() {
@@ -45,7 +45,7 @@ vows.describe('Aggregate').addBatch({
         var sink = new rxflow.ObservableSink();
         aggregate.output.subscribe(sink.input);
         sink.output.forEach(function (x) { results.push(x); });
-        aggregate.flush();
+        aggregate.handleEndOfRound();
         assert.deepEqual(results.sort(), [['a'], ['b'], ['c']]);
     },
     'Test count with single group': function() {
@@ -57,7 +57,7 @@ vows.describe('Aggregate').addBatch({
         var sink = new rxflow.ObservableSink();
         aggregate.output.subscribe(sink.input);
         sink.output.forEach(function (x) { results.push(x); });
-        aggregate.flush();
+        aggregate.handleEndOfRound();
         assert.deepEqual(results.sort(), [['a', 1], ['b', 2]]);
     },
     'Test multiple aggs/multiple groups': function() {
@@ -72,7 +72,7 @@ vows.describe('Aggregate').addBatch({
         var sink = new rxflow.ObservableSink();
         aggregate.output.subscribe(sink.input);
         sink.output.forEach(function (x) { results.push(x); });
-        aggregate.flush();
+        aggregate.handleEndOfRound();
         assert.deepEqual(results.sort(), [[['a', 'x'], 1, 1], [['a', 'y'], 2, 4], [['b', 'x'], 3, 6]]);
     }
 }).export(module);

@@ -28,6 +28,7 @@ class ArgMin<T> extends DataflowElement {
     }
 
     flush() {
+        console.log('ArgMin is flushing');
         this.aggregate.flush();
     }
 

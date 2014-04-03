@@ -3,14 +3,14 @@ import OutputPort = require('./OutputPort');
 import punctuations = require('./punctuations');
 
 
-class InputPort<T> {
+class InputPort<T> extends punctuations.PunctuationHandlerMixin {
 
     private producers: Array<OutputPort<T>> = [];
-    private eorCount = 0;
     private onNextValue: (T) => void;
     private elem: DataflowElement;
 
     constructor(onNextValue: (T) => void, elem: DataflowElement = null) {
+        super();
         this.onNextValue = onNextValue;
         this.elem = elem;
         if (elem != null) {
@@ -22,20 +22,23 @@ class InputPort<T> {
         this.producers.push(producer);
     }
 
-    onNext(val: T): void {
-        if (val === punctuations.END_OF_ROUND) {
-            this.eorCount += 1;
-            if (this.eorCount === this.producers.length) {
-                if (this.elem != null) {
-                    this.elem.handlePunctuation(punctuations.END_OF_ROUND, this);
-                }
-                this.eorCount = 0;
-            }
+    onNext(val: any): void {
+        if (val instanceof punctuations.Punctuation) {
+            this.handlePunctuation(<punctuations.Punctuation> val, null);
         } else {
             this.onNextValue(val);
         }
     }
 
+    getNumInputs(): number {
+        return this.producers.length;
+    }
+
+    sendPunctuationDownstream(punc: punctuations.Punctuation) {
+        if (this.elem != null) {
+            this.elem.handlePunctuation(punc, this);
+        }
+    }
 }
 
 export = InputPort;

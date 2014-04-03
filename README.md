@@ -74,6 +74,9 @@ encapsulate a dataflow and exposes
 [RxJS](http://reactive-extensions.github.io/RxJS/) Observer and Observable
 interfaces for integration with external data sources.
 
+__This description is out of date, now that I'm moving to punctuation-based
+control flow:__
+
 To execute a single logical timestep of a Bloom program, an instance of the
 RxFlow Javascript runtime performs the following actions:
 

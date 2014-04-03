@@ -1,10 +1,17 @@
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var punctuations = require('./punctuations');
 
-var InputPort = (function () {
+var InputPort = (function (_super) {
+    __extends(InputPort, _super);
     function InputPort(onNextValue, elem) {
         if (typeof elem === "undefined") { elem = null; }
+        _super.call(this);
         this.producers = [];
-        this.eorCount = 0;
         this.onNextValue = onNextValue;
         this.elem = elem;
         if (elem != null) {
@@ -16,20 +23,24 @@ var InputPort = (function () {
     };
 
     InputPort.prototype.onNext = function (val) {
-        if (val === punctuations.END_OF_ROUND) {
-            this.eorCount += 1;
-            if (this.eorCount === this.producers.length) {
-                if (this.elem != null) {
-                    this.elem.handlePunctuation(punctuations.END_OF_ROUND, this);
-                }
-                this.eorCount = 0;
-            }
+        if (val instanceof punctuations.Punctuation) {
+            this.handlePunctuation(val, null);
         } else {
             this.onNextValue(val);
         }
     };
+
+    InputPort.prototype.getNumInputs = function () {
+        return this.producers.length;
+    };
+
+    InputPort.prototype.sendPunctuationDownstream = function (punc) {
+        if (this.elem != null) {
+            this.elem.handlePunctuation(punc, this);
+        }
+    };
     return InputPort;
-})();
+})(punctuations.PunctuationHandlerMixin);
 
 module.exports = InputPort;
 //# sourceMappingURL=InputPort.js.map

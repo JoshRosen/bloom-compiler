@@ -1,6 +1,7 @@
 function Bloom () {
     var rx = require('rx');
     var rxflow = require('rxflow');
+    var currentTick = 0;
 
     var tables = {
         "path": new rxflow.Table(3) /* table path, [from: string, to: string, nxt: string, cost: int] */
@@ -76,24 +77,10 @@ function Bloom () {
     elements[7].output.subscribe(tables["path"].insert);
     elements[8].output.subscribe(outputs["shortest"].input);
 
-    function tickStratum0() {
-        var tuplesFlushed = 0;
-        tuplesFlushed += elements[2].flush();
-        return tuplesFlushed;
-    }
-
-    function tickStratum1() {
-        var tuplesFlushed = 0;
-        tuplesFlushed += elements[8].flush();
-        return tuplesFlushed;
-    }
-
     this.tick = function() {
-        var atFixpoint = false;
-        while (!atFixpoint) {
-            atFixpoint = tickStratum0() === 0;
-        }
-        tickStratum1()
+        elements[2].endRound(currentTick);
+        tables["path"].endRound(currentTick);
+        currentTick += 1;
     }
 }
 

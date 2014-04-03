@@ -34,6 +34,7 @@ var ArgMin = (function (_super) {
         this.aggregate.output.subscribe(outputProjector);
     }
     ArgMin.prototype.flush = function () {
+        console.log('ArgMin is flushing');
         this.aggregate.flush();
     };
 

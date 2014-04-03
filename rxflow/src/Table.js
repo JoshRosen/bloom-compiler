@@ -7,6 +7,7 @@ var __extends = this.__extends || function (d, b) {
 var DataflowElement = require('./DataflowElement');
 var InputPort = require('./InputPort');
 var OutputPort = require('./OutputPort');
+var punctuations = require('./punctuations');
 
 /**
 * Represents a relation with a (composite) primary key.
@@ -58,6 +59,10 @@ var Table = (function (_super) {
         } else {
             return undefined;
         }
+    };
+
+    Table.prototype.endRound = function (round) {
+        this.insert.onNext(new punctuations.EndOfRound(round));
     };
     return Table;
 })(DataflowElement);

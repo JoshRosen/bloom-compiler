@@ -65,7 +65,7 @@ class Aggregate<T> extends DataflowElement {
 
     output = new OutputPort(this);
 
-    flush() {
+    handleEndOfRound() {
         for (var i = 0; i < this.aggregators.length; ++i) {
             this.output.onNext([this.groupKeys[i]].concat(this.aggregators[i].map(agg => agg.getValue())));
         }

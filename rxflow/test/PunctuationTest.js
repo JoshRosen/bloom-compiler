@@ -26,7 +26,7 @@ vows.describe('Punctuations').addBatch({
         table.insert.onNext([1, 2]);
         table.insert.onNext([2, 4]);
         table.insert.onNext([3, 6]);
-        flushController.onNext(rxflow.punctuations.END_OF_ROUND);
+        flushController.onNext(new rxflow.punctuations.EndOfRound(0));
 
         assert.deepEqual(results.sort(), [[1, 2], [2, 4], [3, 6]]);
 
