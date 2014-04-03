@@ -151,12 +151,23 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
     }.reduce(_ <@@> _)
   }
 
+  private def buildTickFunction(graph: DataflowGraph): Doc = {
+    val inputScanners = graph.elements.collect { case is @ Scanner(i: InputElement) => is }
+    val tables = graph.tables.values
+    "this.tick" <+> equal <+>  "function()" <+> braces(nest(
+      inputScanners.map(ie => methodCall(elemRef(ie), "endRound", "currentTick") <> semi).foldLeft(empty)(_ <@@> _) <>
+      tables.map(ie => methodCall(elemRef(ie), "endRound", "currentTick") <> semi).foldLeft(empty)(_ <@@> _) <@@>
+      "currentTick += 1;"
+    ) <> linebreak)
+  }
+
   override def generateCode(graph: DataflowGraph): CharSequence = {
 
     val code = "function Bloom ()" <+> braces(nest(
       linebreak <>
       "var rx = require('rx');" <@@>
       "var rxflow = require('rxflow');" <@@>
+      "var currentTick = 0;" <@@>
       linebreak <>
       buildTables(graph) <@@>
       linebreak <>
@@ -168,7 +179,9 @@ object RxFlowCodeGenerator extends DataflowCodeGenerator with JsCodeGeneratorUti
       linebreak <>
       buildInvalidationAndRescanLookupTables(graph) <@@>
       linebreak <>
-      wireElements(graph)
+      wireElements(graph) <@@>
+      linebreak <>
+      buildTickFunction(graph)
     ) <> linebreak)
     super.pretty(code)
   }
