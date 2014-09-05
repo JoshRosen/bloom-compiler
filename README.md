@@ -1,5 +1,7 @@
 # Bloom Compiler
 
+[![Build Status](https://travis-ci.org/JoshRosen/bloom-compiler.svg?branch=master)](https://travis-ci.org/JoshRosen/bloom-compiler)
+
 (This is work-in-progress code that @JoshRosen wrote in grad school).
 
 This is an experimental compiler for a new language based on
@@ -112,6 +114,3 @@ In this architecture, the Table element is somewhat Bloom-specific, but the
 other dataflow elements are completely generic; they only need to support
 a `clear/reset` method to clear cached state and possibly an `end-of-round`
 mechanism to cause buffering operators to emit all of their outputs.
-
-
-[![wercker status](https://app.wercker.com/status/57637a8bfa9aedbe840380a5621d4df7/m/master "wercker status")](https://app.wercker.com/project/bykey/57637a8bfa9aedbe840380a5621d4df7)

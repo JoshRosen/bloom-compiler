@@ -1,4 +1,0 @@
-box: mies/scala@0.1.4
-build:
-  steps:
-     - ericfode/sbt-test@0.2.1
