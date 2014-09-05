@@ -1,5 +1,7 @@
 # Bloom Compiler
 
+(This is work-in-progress code that @JoshRosen wrote in grad school).
+
 This is an experimental compiler for a new language based on
 [Bloom](http://www.bloom-lang.net/).
 
